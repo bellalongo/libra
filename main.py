@@ -40,18 +40,6 @@ for i, row in porb_df.iterrows():
     # Period
     is_real, period = is_real_period(periodogram)
 
-    # Plot the periodogram 
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-    plt.subplots_adjust(hspace=0.3)
-    axs[0, 0].set_title('Periodogram', fontsize=12)
-    axs[0, 0].set_xlabel('Period (hours)', fontsize=10)
-    axs[0, 0].set_ylabel('Power', fontsize=10)
-    axs[0, 0].plot(periodogram.period, periodogram.power)
-    axs[0, 0].axvline(x=row['porb']/24, color = 'red', ls = 'dotted', label = 'Literature period')
-    axs[0, 0].axvline(x=period, color = 'blue', ls = 'dotted', label = 'Period at max power')
-    axs[0, 0].set_xscale('log') 
-    axs[0, 0].legend()
-
     # Define folded and binned lightcurve
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
     binned_lightcurve = phase_lightcurve.bin(4*u.min) 
@@ -62,12 +50,6 @@ for i, row in porb_df.iterrows():
     binned_flux_lower_err = binned_lightcurve.flux - binned_lightcurve.flux_err
     binned_flux_upper_err = binned_lightcurve.flux + binned_lightcurve.flux_err
 
-    # Plot binned lightcurve
-    axs[1, 0].set_title('Folded on Period at Max Power', fontsize=12)
-    axs[1, 0].set_xlabel('Phase', fontsize = 10)
-    axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[1, 0].vlines(binned_phase, binned_flux_lower_err, binned_flux_upper_err, lw=1)
-    
     # Lightcurve data
     time = lightcurve.time.value
     flux = lightcurve.flux.value
@@ -80,22 +62,39 @@ for i, row in porb_df.iterrows():
     params = model.make_params(amplitude=max_power, frequency = 1/periodogram.period_at_max_power.value, phase=0.0)
     result = model.fit(flux, params, x=time)
 
+    # Plot the periodogram 
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    plt.subplots_adjust(hspace=0.3)
+    axs[0, 0].set_title('Periodogram', fontsize=12)
+    axs[0, 0].set_xlabel('Period (hours)', fontsize=10)
+    axs[0, 0].set_ylabel('Power', fontsize=10)
+    axs[0, 0].plot(periodogram.period, periodogram.power)
+    axs[0, 0].axvline(x=row['porb']/24, color = 'red', ls = 'dotted', label = 'Literature period')
+    axs[0, 0].axvline(x=period, color = 'blue', ls = 'dotted', label = 'Period at max power')
+    axs[0, 0].set_xscale('log') 
+    axs[0, 0].legend()
+
+    # Plot binned lightcurve
+    axs[1, 0].set_title('Folded on Period at Max Power', fontsize=12)
+    axs[1, 0].set_xlabel('Phase', fontsize = 10)
+    axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
+    axs[1, 0].vlines(binned_phase, binned_flux_lower_err, binned_flux_upper_err, lw=1)
+
     # Plot the fitted sin wave
     axs[0, 1].set_title('Lightcurve', fontsize=12)
     axs[0, 1].set_xlabel('Time (hours)', fontsize = 10)
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[0, 1].vlines(time, flux_lower_err, flux_upper_err, lw=2, label = 'Data')
-    axs[0, 1].plot(time, result.best_fit, color= 'black', label = 'Fitted Sin Wave')
+    axs[0, 1].vlines(time, flux_lower_err, flux_upper_err, lw=2)
+    axs[0, 1].plot(time, result.best_fit, color= 'black', label = 'Fitted Sine Wave')
     axs[0, 1].set_xlim(min(time), min(time) + 1)
     axs[0, 1].legend()
 
     # Subtract sine wave
     flare_data = flux - result.best_fit
-    axs[1, 1].set_title('Flare plot', fontsize=12)
+    axs[1, 1].set_title('Flux - Sine Wave', fontsize=12)
     axs[1, 1].set_xlabel('Time (hours)', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[1, 1].plot(time, flare_data, label='Flares')
+    axs[1, 1].plot(time, flare_data)
     axs[1, 1].set_xlim(min(time), min(time) + 1)
-    axs[1, 1].legend()
 
     plt.show()
