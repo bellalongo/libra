@@ -1,4 +1,11 @@
+import csv
+import matplotlib.pyplot as plt
 import numpy as np
+import sys
+
+
+# Global variables
+period_bool_list = []
 
 
 """
@@ -39,10 +46,8 @@ def is_real_period(periodogram):
 
     # Check if within 5 sigma range
     if (abs(period - np.median(periodogram_period)) < 5 * std_dev) or (abs(period - np.median(periodogram_period)) < 4 * std_dev):
-        print(f'It is LIKELY that the orbital period {period} days is real')
         return True, period
     else:
-        print(f'It is NOT likely that the orbital period {period} days is real')
         return False, period
     
 
@@ -79,3 +84,54 @@ def best_lightcurve(result, result_exposures, cadence):
                 best_cdpp = cdpp
 
     return best_lightcurve if best_lightcurve else lightcurve if lightcurve else None    
+
+
+"""
+    Append row to a CSV file
+    Name:       append_to_csv()
+    Parameters: 
+                filename: CSV file's name 
+                row: row to be added to the file
+    Returns:
+                None
+"""
+def append_to_csv(filename, row):
+    # Check if file already exists
+    try:
+        with open(filename, 'r') as csvfile:
+            pass
+        file_exists = True
+    except FileNotFoundError:
+        file_exists = False
+    
+    # Open file in append mode
+    with open(filename, 'a', newline='') as csvfile:
+        fieldnames = ["Star", "Orbital Period(hours)"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write header if file doesn't exist
+        if not file_exists:
+            writer.writeheader()
+        
+        # Append row
+        writer.writerow(row)
+
+
+"""
+    Event function that determines if a key was clicked
+    Name:       on_key()
+    Parameters: 
+                event: key press event
+                purpose: either doppler or noise
+    Returns:
+                None
+"""
+def on_key(event):
+    valid_keys = {'y', 'n'}
+
+    if event.key not in valid_keys:
+        sys.exit("Invalid key input, select 'y' or 'n'")
+    else:
+        period_bool_list.append(event.key == 'y')
+        print('Loading next plot ... \n')
+        plt.close()
