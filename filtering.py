@@ -91,7 +91,7 @@ def select_period(lightcurve, periodogram, row):
 
     # Plot basics
     sns.set_style("darkgrid")
-    sns.set_theme(rc={'axes.facecolor':'#F6F6F4'})
+    sns.set_theme(rc={'axes.facecolor':'#F8F5F2'})
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     plt.subplots_adjust(hspace=0.35)
     plt.suptitle(f"Press the number corresponding with the best period candidate (1,2,3)", fontweight = 'bold') # add option NONE
@@ -103,10 +103,10 @@ def select_period(lightcurve, periodogram, row):
     axs[0, 0].set_xlabel('Period (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power, color = '#4B644A')
-    axs[0, 0].axvline(x=period, color = '#0A2A48', ls = 'dashed', lw = 2, label = 'Period at max power')
-    axs[0, 0].axvline(x=period/2, color = '#165EA2', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
-    axs[0, 0].axvline(x=2*period, color = '#4B9CE7', ls = 'dashed', lw = 2, label = '2 * Period at max power')
-    axs[0, 0].axvline(x=row['porb']/24, color = '#C8B8DB', label = 'Literature period')
+    axs[0, 0].axvline(x=row['porb']/24, color = '#4F000B', label = 'Literature period')
+    axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = 'Period at max power')
+    axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
+    axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = '2 * Period at max power')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
@@ -118,7 +118,7 @@ def select_period(lightcurve, periodogram, row):
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 0].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#165EA2', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#DD882C', lw=2)
     
     # Fold on max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
@@ -128,7 +128,7 @@ def select_period(lightcurve, periodogram, row):
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[0, 1].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#0A2A48', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#D36135', lw=2)
     
     # Fold on 2* max power
     phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
@@ -138,7 +138,7 @@ def select_period(lightcurve, periodogram, row):
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 1].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#5DA6E9', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#E3BE4F', lw=2)
     
     plt.show()
 

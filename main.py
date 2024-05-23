@@ -88,7 +88,7 @@ def main():
         axs[0, 0].set_ylabel('Power', fontsize=10)
         axs[0, 0].plot(periodogram.period, periodogram.power)
         axs[0, 0].axvline(x=period, color = '#F0803C', ls = 'dotted', lw = 3, label = 'Period at max power')
-        axs[0,0].axvline(x=row['porb']/24, color = 'red', label = 'Literature period')
+        axs[0,0].axvline(x=row['porb']/24, color = '#A30016', label = 'Literature period')
         axs[0, 0].set_xscale('log') 
         axs[0, 0].legend()
 
