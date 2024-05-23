@@ -1,11 +1,14 @@
+import astropy.units as u
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import sys
 
 
 # Global variables
 period_bool_list = []
+best_period_list = []
 
 
 """
@@ -32,20 +35,17 @@ def sine_wave(x, amplitude, frequency, phase):
                 boolean: True if the period is real, False if not real
                 period: period at max power
 """
-def is_real_period(periodogram):
+def is_real_period(periodogram, period):
     # Remove NaNs from the periodogram
     nan_mask = ~np.isnan(periodogram.power)
     periodogram_power = periodogram.power[nan_mask]
     periodogram_period = periodogram.period[nan_mask].value
-
-    # Sort the power array in descending order
-    max_power = max(periodogram_power)
+    
+    # Calculate period at max power
     std_dev = np.std(periodogram_power)
-    index = np.where(periodogram_power == max_power)[0][0]
-    period = periodogram_period[index]
 
     # Check if within 5 sigma range
-    if (abs(period - np.median(periodogram_period)) < 5 * std_dev) or (abs(period - np.median(periodogram_period)) < 4 * std_dev):
+    if (abs(period - np.median(periodogram_period)) > 5 * std_dev) or (abs(period - np.median(periodogram_period)) > 4 * std_dev):
         return True, period
     else:
         return False, period
@@ -84,6 +84,74 @@ def best_lightcurve(result, result_exposures, cadence):
                 best_cdpp = cdpp
 
     return best_lightcurve if best_lightcurve else lightcurve if lightcurve else None    
+
+
+def select_period(lightcurve, periodogram, row):
+    period = periodogram.period_at_max_power.value 
+
+    # Plot basics
+    sns.set_style("darkgrid")
+    sns.set_theme(rc={'axes.facecolor':'#F6F6F4'})
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    plt.subplots_adjust(hspace=0.35)
+    plt.suptitle(f"Press the number corresponding with the best period candidate (1,2,3)", fontweight = 'bold') # add option NONE
+    fig.text(0.5, 0.94, "If none are good, press 'n'", ha='center', fontsize=12, fontweight = 'bold')
+    cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Period selection'))
+
+    # Plot the periodogram 
+    axs[0, 0].set_title('Periodogram', fontsize=12)
+    axs[0, 0].set_xlabel('Period (days)', fontsize=10)
+    axs[0, 0].set_ylabel('Power', fontsize=10)
+    axs[0, 0].plot(periodogram.period, periodogram.power, color = '#4B644A')
+    axs[0, 0].axvline(x=period, color = '#0A2A48', ls = 'dashed', lw = 2, label = 'Period at max power')
+    axs[0, 0].axvline(x=period/2, color = '#165EA2', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
+    axs[0, 0].axvline(x=2*period, color = '#4B9CE7', ls = 'dashed', lw = 2, label = '2 * Period at max power')
+    axs[0, 0].axvline(x=row['porb']/24, color = '#C8B8DB', label = 'Literature period')
+    axs[0, 0].set_xscale('log') 
+    axs[0, 0].legend(loc = 'upper left')
+
+    # Fold on period at 1/2 * max power
+    phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power/2)
+    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    axs[1, 0].set_title('PLOT 1: Folded on Period at 1/2 * Max Power', fontsize=12)
+    axs[1, 0].set_xlabel('Phase', fontsize = 10)
+    axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
+    axs[1, 0].vlines(binned_lightcurve.phase.value, 
+                        binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#165EA2', lw=2)
+    
+    # Fold on max power
+    phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
+    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    axs[0, 1].set_title('PLOT 2: Folded on Period at Max Power', fontsize=12)
+    axs[0, 1].set_xlabel('Phase', fontsize = 10)
+    axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
+    axs[0, 1].vlines(binned_lightcurve.phase.value, 
+                        binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#0A2A48', lw=2)
+    
+    # Fold on 2* max power
+    phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
+    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    axs[1, 1].set_title('PLOT 3: Folded on Period at 2 * Max Power', fontsize=12)
+    axs[1, 1].set_xlabel('Phase', fontsize = 10)
+    axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
+    axs[1, 1].vlines(binned_lightcurve.phase.value, 
+                        binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#5DA6E9', lw=2)
+    
+    plt.show()
+
+    # Check which plot was selected
+    curr_index = len(best_period_list) - 1
+    if best_period_list[curr_index] == '1':
+        return period/2
+    elif best_period_list[curr_index] == '2':
+        return period
+    elif best_period_list[curr_index] == '3':
+        return 2*period
+    else:
+        return False
 
 
 """
@@ -126,12 +194,23 @@ def append_to_csv(filename, row):
     Returns:
                 None
 """
-def on_key(event):
-    valid_keys = {'y', 'n'}
+def on_key(event, purpose):
+    real_period_keys = {'y', 'n'}
+    period_selection_keys = {'1', '2', '3', 'n'}
 
-    if event.key not in valid_keys:
-        sys.exit("Invalid key input, select 'y' or 'n'")
+    if purpose == 'Period selection':
+        if event.key not in period_selection_keys:
+            sys.exit("Invalid key input, select '1', '2', '3', or 'n'")
+        else:
+            best_period_list.append(event.key)
+            print(f'Selected plot {event.key}')
+            plt.close()
+    elif purpose == 'Real period':
+        if event.key not in real_period_keys:
+            sys.exit("Invalid key input, select 'y' or 'n'")
+        else:
+            period_bool_list.append(event.key == 'y')
+            print('Loading next plot ... \n')
+            plt.close()
     else:
-        period_bool_list.append(event.key == 'y')
-        print('Loading next plot ... \n')
-        plt.close()
+        sys.exit("Invalid purpose, select 'Period selection' or 'Real period'")
