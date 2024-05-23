@@ -52,41 +52,49 @@ def is_real_period(periodogram, period):
     
 
 """
-    Finds the best lightcurve based off of CDPP within a lightcurve query
-    Name:
+    Appends all lightcurves of the desired cadence
+    Name:       append_lightcurves()
     Parameters:
+                result: star lightkurve query result
+                result_exposures: star lightkurve query exposures
+                cadence: desired lightcurve cadence
     Returns:
+            None: if no lightcurves are of the desired cadence
+            combined_lightcurve: appended lightcurves
 """
-def best_lightcurve(result, result_exposures, cadence):
-    # Initialization
-    lightcurve, best_lightcurve, best_cdpp = None, None, float('inf')
+def append_lightcurves(result, result_exposures, cadence):
+    all_lightcurves = []
 
     # Get the data whose exposure is the desired cadence
     for i, exposure in enumerate(result_exposures):
         # Check to see if exposure matches cadence 
         if exposure.value == cadence:
-            lightcurve = result[i].download().remove_nans().remove_outliers()
-
-            # Check median flux
-            median_flux = np.median(lightcurve.flux)
-            if median_flux < 0 or np.isclose(median_flux, 0, atol=1e-6):
-                continue
-
-            # Normalize lightcurve 
-            lightcurve = lightcurve.normalize() - 1
-
-            # Evaluate combined differential photometric precision(CDPP)
-            cdpp = lightcurve.estimate_cdpp()
-
-            # Compare and select lightcurve with the best SNR
-            if cdpp < best_cdpp:
-                best_lightcurve = lightcurve
-                best_cdpp = cdpp
-
-    return best_lightcurve if best_lightcurve else lightcurve if lightcurve else None    
+            lightcurve = result[i].download().remove_nans().remove_outliers().normalize() - 1
+            all_lightcurves.append(lightcurve)
+    
+    # Check if there are lightcurves
+    if all_lightcurves:
+        combined_lightcurve = all_lightcurves[0]
+        # Iterate through all of the lightcurves
+        for lc in all_lightcurves[1:]:
+            combined_lightcurve = combined_lightcurve.append(lc)
+    else:
+        return None
+    
+    return combined_lightcurve  
 
 
-def select_period(lightcurve, periodogram, row):
+"""
+    Present a series of plots folded on the 'best' period candidates, allowing the user
+    to select the best one
+    Name:       select_period()
+    Parameters:
+                lightcurve: current star's lightcurve
+                periodogram: current star's periodogram
+                literature_period: pre-calculated period, if any 
+    Returns:
+"""
+def select_period(lightcurve, periodogram, literature_period):
     period = periodogram.period_at_max_power.value 
 
     # Plot basics
@@ -103,7 +111,7 @@ def select_period(lightcurve, periodogram, row):
     axs[0, 0].set_xlabel('Period (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power, color = '#4B644A')
-    axs[0, 0].axvline(x=row['porb']/24, color = '#4F000B', label = 'Literature period')
+    axs[0, 0].axvline(x=literature_period, color = '#4F000B', label = 'Literature period')
     axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = 'Period at max power')
     axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
     axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = '2 * Period at max power')
@@ -203,6 +211,8 @@ def on_key(event, purpose):
             sys.exit("Invalid key input, select '1', '2', '3', or 'n'")
         else:
             best_period_list.append(event.key)
+            if event.key == 'n':
+                print(f'None selected, loading next plot ... \n')
             print(f'Selected plot {event.key}')
             plt.close()
     elif purpose == 'Real period':
