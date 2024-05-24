@@ -46,9 +46,9 @@ def is_real_period(periodogram, period):
 
     # Check if within 5 sigma range
     if (abs(period - np.median(periodogram_period)) > 5 * std_dev) or (abs(period - np.median(periodogram_period)) > 4 * std_dev):
-        return True, period
+        return True
     else:
-        return False, period
+        return False
     
 
 """
@@ -110,16 +110,17 @@ def find_bin_value(lightcurve, num_bins):
                 literature_period: pre-calculated period, if any 
     Returns:
 """
-def select_period(lightcurve, periodogram, literature_period, cadence):
+def select_period(lightcurve, periodogram, literature_period, cadence, star_name):
     period = periodogram.period_at_max_power.value 
 
     # Plot basics
     sns.set_style("darkgrid")
     sns.set_theme(rc={'axes.facecolor':'#F8F5F2'})
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axs = plt.subplots(2, 2, figsize=(14, 8))
     plt.subplots_adjust(hspace=0.35)
-    plt.suptitle(f"Press the number corresponding with the best period candidate (1,2,3)", fontweight = 'bold') # add option NONE
+    plt.suptitle(fr'Press the key corresponding with the best period candidate (1,2,3)', fontweight = 'bold') # add option NONE
     fig.text(0.5, 0.928, "If none are good, press 'n'", ha='center', fontsize=14, fontweight = 'bold')
+    fig.text(0.5, 0.02, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Period selection'))
 
     # Plot the periodogram 
