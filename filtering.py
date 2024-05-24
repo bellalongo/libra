@@ -84,6 +84,13 @@ def append_lightcurves(result, result_exposures, cadence):
     return combined_lightcurve  
 
 
+def find_bins(lightcurve, num_bins):
+    total_points = len(lightcurve.time.value)
+    total_duration_mins = ((lightcurve.time.value[total_points - 1] - lightcurve.time.value[0]) * u.day).to(u.minute)
+    print(total_duration_mins/num_bins)
+    return (total_duration_mins/num_bins).value
+
+
 """
     Present a series of plots folded on the 'best' period candidates, allowing the user
     to select the best one
@@ -94,7 +101,7 @@ def append_lightcurves(result, result_exposures, cadence):
                 literature_period: pre-calculated period, if any 
     Returns:
 """
-def select_period(lightcurve, periodogram, literature_period):
+def select_period(lightcurve, periodogram, literature_period, cadence):
     period = periodogram.period_at_max_power.value 
 
     # Plot basics
@@ -110,8 +117,8 @@ def select_period(lightcurve, periodogram, literature_period):
     axs[0, 0].set_title('Periodogram', fontsize=12)
     axs[0, 0].set_xlabel('Period (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
-    axs[0, 0].plot(periodogram.period, periodogram.power, color = '#4B644A')
-    axs[0, 0].axvline(x=literature_period, color = '#4F000B', label = 'Literature period')
+    axs[0, 0].plot(periodogram.period, periodogram.power, color = '#322820')
+    axs[0, 0].axvline(x=literature_period, color = '#DF2935', label = 'Literature period')
     axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = 'Period at max power')
     axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
     axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = '2 * Period at max power')
@@ -120,7 +127,8 @@ def select_period(lightcurve, periodogram, literature_period):
 
     # Fold on period at 1/2 * max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power/2)
-    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    bins = find_bins(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
     axs[1, 0].set_title('PLOT 1: Folded on Period at 1/2 * Max Power', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
@@ -130,7 +138,8 @@ def select_period(lightcurve, periodogram, literature_period):
     
     # Fold on max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
-    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    bins = find_bins(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
     axs[0, 1].set_title('PLOT 2: Folded on Period at Max Power', fontsize=12)
     axs[0, 1].set_xlabel('Phase', fontsize = 10)
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
@@ -140,7 +149,8 @@ def select_period(lightcurve, periodogram, literature_period):
     
     # Fold on 2* max power
     phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
-    binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+    bins = find_bins(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
     axs[1, 1].set_title('PLOT 3: Folded on Period at 2 * Max Power', fontsize=12)
     axs[1, 1].set_xlabel('Phase', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
@@ -159,7 +169,7 @@ def select_period(lightcurve, periodogram, literature_period):
     elif best_period_list[curr_index] == '3':
         return 2*period
     else:
-        return False
+        return False  
 
 
 """
@@ -211,9 +221,11 @@ def on_key(event, purpose):
             sys.exit("Invalid key input, select '1', '2', '3', or 'n'")
         else:
             best_period_list.append(event.key)
+            print(best_period_list)
             if event.key == 'n':
                 print(f'None selected, loading next plot ... \n')
-            print(f'Selected plot {event.key}')
+            else:
+                print(f'Selected plot {event.key}')
             plt.close()
     elif purpose == 'Real period':
         if event.key not in real_period_keys:

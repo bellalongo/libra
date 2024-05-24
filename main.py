@@ -40,7 +40,8 @@ def main():
             continue
 
         # Get the best lightcurve
-        lightcurve = best_lightcurve(result, result_exposures, cadence)
+        literature_period = row['porb']/24
+        lightcurve = append_lightcurves(result, result_exposures, cadence)
         if not lightcurve: continue # check if there was a result with the cadence needed
         
         # Get periodogram
@@ -49,7 +50,7 @@ def main():
                                                 maximum_period = 14)
         
         # Choose the best period candidate
-        period = select_period(lightcurve, periodogram, row)
+        period = select_period(lightcurve, periodogram, literature_period, cadence)
         if not period:
             continue
 
@@ -58,7 +59,9 @@ def main():
 
         # Define folded and binned lightcurve
         phase_lightcurve = lightcurve.fold(period = period)
-        binned_lightcurve = phase_lightcurve.bin(4*u.min) 
+        bins = find_bins(phase_lightcurve, cadence)
+        binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
+        print(len(phase_lightcurve), len(binned_lightcurve))
 
         # Lightcurve data
         time = lightcurve.time.value
@@ -88,7 +91,7 @@ def main():
         axs[0, 0].set_ylabel('Power', fontsize=10)
         axs[0, 0].plot(periodogram.period, periodogram.power)
         axs[0, 0].axvline(x=period, color = '#F0803C', ls = 'dotted', lw = 3, label = 'Period at max power')
-        axs[0,0].axvline(x=row['porb']/24, color = '#A30016', label = 'Literature period')
+        axs[0,0].axvline(x=literature_period, color = '#A30016', label = 'Literature period')
         axs[0, 0].set_xscale('log') 
         axs[0, 0].legend()
 
