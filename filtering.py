@@ -119,18 +119,18 @@ def select_period(lightcurve, periodogram, literature_period, cadence):
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     plt.subplots_adjust(hspace=0.35)
     plt.suptitle(f"Press the number corresponding with the best period candidate (1,2,3)", fontweight = 'bold') # add option NONE
-    fig.text(0.5, 0.94, "If none are good, press 'n'", ha='center', fontsize=12, fontweight = 'bold')
+    fig.text(0.5, 0.928, "If none are good, press 'n'", ha='center', fontsize=14, fontweight = 'bold')
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Period selection'))
 
     # Plot the periodogram 
     axs[0, 0].set_title('Periodogram', fontsize=12)
-    axs[0, 0].set_xlabel('Period (days)', fontsize=10)
+    axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power, color = '#322820')
-    axs[0, 0].axvline(x=literature_period, color = '#DF2935', label = 'Literature period')
-    axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = 'Period at max power')
-    axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = '1/2 * Period at max power')
-    axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = '2 * Period at max power')
+    axs[0, 0].axvline(x=literature_period, color = '#DF2935', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
+    axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = fr'$P_{{\text{{orb, max}}}}={np.round(period, 2)}$ days')
+    axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = fr'$\frac{{1}}{{2}} \times P_{{\text{{orb, max}}}}={np.round(period/2, 2)}$ days')
+    axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = fr'$2 \times P_{{\text{{orb, max}}}}={np.round(2*period, 2)}$ days')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
@@ -138,34 +138,40 @@ def select_period(lightcurve, periodogram, literature_period, cadence):
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power/2)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
-    axs[1, 0].set_title('PLOT 1: Folded on Period at 1/2 * Max Power', fontsize=12)
+    axs[1, 0].set_title(r'$\mathbf{1}$: Folded on $\frac{1}{2} \times P_{\text{orb, max}}$', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 0].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#DD882C', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, 
+                        color = '#DD882C', lw=2, label = fr'$\frac{{1}}{{2}} \times P_{{\text{{orb, max}}}}={np.round(period/2, 2)}$ days')
+    axs[1,0].legend()
     
     # Fold on max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
-    axs[0, 1].set_title('PLOT 2: Folded on Period at Max Power', fontsize=12)
+    axs[0, 1].set_title(r'$\mathbf{2}$: Folded on $P_{\text{orb, max}}$', fontsize=12)
     axs[0, 1].set_xlabel('Phase', fontsize = 10)
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[0, 1].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#D36135', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, 
+                        color = '#D36135', lw=2, label = fr'$P_{{\text{{orb, max}}}}={np.round(period, 2)}$ days')
+    axs[0,1].legend()
     
     # Fold on 2* max power
     phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
-    axs[1, 1].set_title('PLOT 3: Folded on Period at 2 * Max Power', fontsize=12)
+    axs[1, 1].set_title(r'$\mathbf{3}$: Folded on $2 \times P_{\text{orb, max}}$', fontsize=12)
     axs[1, 1].set_xlabel('Phase', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 1].vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#E3BE4F', lw=2)
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, 
+                        color = '#E3BE4F', lw=2, label = fr'$2 \times P_{{\text{{orb, max}}}}={np.round(2*period, 2)}$ days')
+    axs[1,1].legend()
     
     plt.show()
 
