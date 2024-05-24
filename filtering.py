@@ -84,11 +84,20 @@ def append_lightcurves(result, result_exposures, cadence):
     return combined_lightcurve  
 
 
-def find_bins(lightcurve, num_bins):
+"""
+    Calculates the best bin value based off of the duration of the lightcurve
+    Name:       find_bin_value()
+    Parameters:
+                lightcurve: current star's lightcurve
+                num_bins: desired number of bins (best value is the cadence)
+    Returns:
+                bin_value: number of minutes for each bin
+"""
+def find_bin_value(lightcurve, num_bins):
     total_points = len(lightcurve.time.value)
     total_duration_mins = ((lightcurve.time.value[total_points - 1] - lightcurve.time.value[0]) * u.day).to(u.minute)
-    print(total_duration_mins/num_bins)
-    return (total_duration_mins/num_bins).value
+    bin_value = (total_duration_mins/num_bins).value
+    return bin_value
 
 
 """
@@ -127,8 +136,8 @@ def select_period(lightcurve, periodogram, literature_period, cadence):
 
     # Fold on period at 1/2 * max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power/2)
-    bins = find_bins(phase_lightcurve, cadence)
-    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
+    bin_value = find_bin_value(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 0].set_title('PLOT 1: Folded on Period at 1/2 * Max Power', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
@@ -138,8 +147,8 @@ def select_period(lightcurve, periodogram, literature_period, cadence):
     
     # Fold on max power
     phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
-    bins = find_bins(phase_lightcurve, cadence)
-    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
+    bin_value = find_bin_value(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[0, 1].set_title('PLOT 2: Folded on Period at Max Power', fontsize=12)
     axs[0, 1].set_xlabel('Phase', fontsize = 10)
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
@@ -149,8 +158,8 @@ def select_period(lightcurve, periodogram, literature_period, cadence):
     
     # Fold on 2* max power
     phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
-    bins = find_bins(phase_lightcurve, cadence)
-    binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
+    bin_value = find_bin_value(phase_lightcurve, cadence)
+    binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 1].set_title('PLOT 3: Folded on Period at 2 * Max Power', fontsize=12)
     axs[1, 1].set_xlabel('Phase', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
@@ -221,7 +230,6 @@ def on_key(event, purpose):
             sys.exit("Invalid key input, select '1', '2', '3', or 'n'")
         else:
             best_period_list.append(event.key)
-            print(best_period_list)
             if event.key == 'n':
                 print(f'None selected, loading next plot ... \n')
             else:

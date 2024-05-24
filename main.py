@@ -12,9 +12,12 @@ from filtering import *
 
 
 def main():
+    # Cadence wanting to use
+    cadence = 120
+
     # Filenames
     porb_filename = 'orbital_periods/porb_periods.csv'
-    no_porb_filename = 'orbital_periods/no_porb_periods.csv'
+    no_porb_filename = 'orbital_periods/no_porb_periods.csv' # Change me to be a query?
 
     # Remove previous csv if exists
     if exists(porb_filename):
@@ -25,9 +28,6 @@ def main():
     filterd_df = df[['iau_name', 'i', 'porb', 'porbe']] # update at some point so it uses just filtereddf
     porb_df = filterd_df[filterd_df['porb'] != 0].reset_index()
     no_porb_df = filterd_df[filterd_df['porb'] == 0].reset_index() 
-
-    # Cadence wanting to use
-    cadence = 120
 
     # Iterate through all rows with an orbital period
     for _, row in porb_df.iterrows():
@@ -40,13 +40,13 @@ def main():
             continue
 
         # Get the best lightcurve
-        literature_period = row['porb']/24
+        literature_period = (row['porb']*u.hour).to(u.day).value
         lightcurve = append_lightcurves(result, result_exposures, cadence)
         if not lightcurve: continue # check if there was a result with the cadence needed
         
         # Get periodogram
         periodogram = lightcurve.to_periodogram(oversample_factor = 10, 
-                                                minimum_period = (2*cadence) / (60*60*24), 
+                                                minimum_period = (2*cadence*u.second).to(u.day).value, 
                                                 maximum_period = 14)
         
         # Choose the best period candidate
@@ -59,9 +59,8 @@ def main():
 
         # Define folded and binned lightcurve
         phase_lightcurve = lightcurve.fold(period = period)
-        bins = find_bins(phase_lightcurve, cadence)
-        binned_lightcurve = phase_lightcurve.bin(bins*u.min) 
-        print(len(phase_lightcurve), len(binned_lightcurve))
+        bin_value = find_bin_value(phase_lightcurve, cadence)
+        binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
 
         # Lightcurve data
         time = lightcurve.time.value
