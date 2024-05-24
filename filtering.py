@@ -110,7 +110,7 @@ def find_bin_value(lightcurve, num_bins):
                 literature_period: pre-calculated period, if any 
     Returns:
 """
-def select_period(lightcurve, periodogram, literature_period, cadence, star_name):
+def select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag):
     period = periodogram.period_at_max_power.value 
 
     # Plot basics
@@ -120,7 +120,8 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     plt.subplots_adjust(hspace=0.35)
     plt.suptitle(fr'Press the key corresponding with the best period candidate (1,2,3)', fontweight = 'bold') # add option NONE
     fig.text(0.5, 0.928, "If none are good, press 'n'", ha='center', fontsize=14, fontweight = 'bold')
-    fig.text(0.5, 0.02, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
+    fig.text(0.5, 0.05, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
+    fig.text(0.5, 0.02, fr'$i_{{\text{{mag}}}}={star_imag}$', ha='center', fontsize=12, fontweight = 'bold')
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Period selection'))
 
     # Plot the periodogram 

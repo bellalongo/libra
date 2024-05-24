@@ -44,6 +44,7 @@ def main():
 
         # Star data
         star_name = 'TIC ' + str(lightcurve.meta['TICID'])
+        star_imag = row['i']
         literature_period = (row['porb']*u.hour).to(u.day).value
         
         # Get periodogram
@@ -52,7 +53,7 @@ def main():
                                                 maximum_period = 14)
         
         # Choose the best period candidate
-        best_period = select_period(lightcurve, periodogram, literature_period, cadence, star_name)
+        best_period = select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag)
         if not best_period:
             continue
 
@@ -80,7 +81,8 @@ def main():
         fig, axs = plt.subplots(2, 2, figsize=(14, 8))
         plt.subplots_adjust(hspace=0.35)
         plt.suptitle(fr"Press the key 'y' if the period {np.round(best_period, 3)} days is real, 'n' if not", fontweight = 'bold')
-        fig.text(0.5, 0.02, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
+        fig.text(0.5, 0.05, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
+        fig.text(0.5, 0.02, fr'$i_{{\text{{mag}}}}={star_imag}$', ha='center', fontsize=12, fontweight = 'bold')
         cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Real period'))
         if is_real:
             fig.text(0.5, 0.928, 'Note: The period is over 5 sigma, so MIGHT be real', ha='center', fontsize=12, style = 'italic')
