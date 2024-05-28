@@ -12,29 +12,26 @@ from filtering import *
 
 
 def main():
-    # Check if raw data has been converted
-    if not exists('wdss_data.csv'):
-        commaize('raw_wdss_data.csv', 'wdss_data.csv')
-
     # Cadence wanting to use
     cadence = 120
 
     # Filenames
-    porb_filename = 'orbital_periods/porb_periods.csv'
-    no_porb_filename = 'orbital_periods/no_porb_periods.csv' # Change me to be a query?
+    csv_filename = 'wdss_data.csv'
+    porb_filename = 'orbital_periods/periods.csv'
 
-    # Remove previous csv if exists
-    if exists(porb_filename):
-        os.remove(porb_filename)
+    # Check if raw data has been converted
+    if not exists(csv_filename):
+        commaize('raw_wdss_data.csv', csv_filename)
+    # Check if periods were already calculated
+    elif exists(porb_filename):
+        os.remove(porb_filename) # maybe add somehow to pick up where left off
 
     # Define SDSS query dataframes
-    df = pd.read_csv('testing/query_data/comma_test_query.csv')
-    filterd_df = df[['iau_name', 'i', 'porb', 'porbe']] # update at some point so it uses just filtereddf
-    porb_df = filterd_df[filterd_df['porb'] != 0].reset_index()
-    no_porb_df = filterd_df[filterd_df['porb'] == 0].reset_index() 
+    df = pd.read_csv(csv_filename)
+    df = df[['iau_name', 'i', 'porb', 'porbe']] 
 
     # Iterate through all rows with an orbital period
-    for _, row in porb_df.iterrows():
+    for _, row in df.iterrows():
         # Pull data for that star
         try:
             result = lk.search_lightcurve(row['iau_name'], mission = 'TESS')
@@ -98,7 +95,7 @@ def main():
         axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
         axs[0, 0].set_ylabel('Power', fontsize=10)
         axs[0, 0].plot(periodogram.period, periodogram.power)
-        axs[0,0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
+        if literature_period != 0.0: axs[0,0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
         axs[0, 0].axvline(x=best_period, color = '#141B41', lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days')
         axs[0, 0].set_xscale('log') 
         axs[0, 0].legend(loc = 'upper left')
@@ -135,9 +132,9 @@ def main():
         # Check if the was marked as
         curr_index = len(period_bool_list) - 1
         if period_bool_list[curr_index]:
-            row = {"Star" : star_name, "Orbital Period(hours)" : best_period}
+            row = {"Star" : star_name, "Orbital Period(days)" : best_period}
             append_to_csv(porb_filename, row)
-            
+
 
 if __name__ == '__main__':
     main()

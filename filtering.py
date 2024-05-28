@@ -112,14 +112,18 @@ def find_bin_value(lightcurve, num_bins):
 """
 def select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag):
     period = periodogram.period_at_max_power.value 
+    is_real = is_real_period(periodogram, period)
 
     # Plot basics
     sns.set_style("darkgrid")
     sns.set_theme(rc={'axes.facecolor':'#F8F5F2'})
     fig, axs = plt.subplots(2, 2, figsize=(14, 8))
     plt.subplots_adjust(hspace=0.35)
-    plt.suptitle(fr'Press the key corresponding with the best period candidate (1,2,3)', fontweight = 'bold') # add option NONE
-    fig.text(0.5, 0.928, "If none are good, press 'n'", ha='center', fontsize=14, fontweight = 'bold')
+    plt.suptitle(fr"Press the key corresponding with the best period candidate (1,2,3), if none are good, press 'n'", fontweight = 'bold') # add option NONE
+    if is_real:
+        fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max}}$ is over 5 sigma, so MIGHT be real', ha='center', fontsize=12, style = 'italic')
+    else:
+        fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max}}$ is under 5 sigma, so might NOT be real', ha='center', fontsize=12, style = 'italic')
     fig.text(0.5, 0.05, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
     fig.text(0.5, 0.02, fr'$i_{{\text{{mag}}}}={star_imag}$', ha='center', fontsize=12, fontweight = 'bold')
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Period selection'))
@@ -129,7 +133,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power, color = '#322820')
-    axs[0, 0].axvline(x=literature_period, color = '#DF2935', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
+    if literature_period != 0.0: axs[0, 0].axvline(x=literature_period, color = '#DF2935', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
     axs[0, 0].axvline(x=period, color = '#D36135', ls = 'solid', lw = 2, label = fr'$P_{{\text{{orb, max}}}}={np.round(period, 2)}$ days')
     axs[0, 0].axvline(x=period/2, color = '#DD882C', ls = 'dashed', lw = 2, label = fr'$\frac{{1}}{{2}} \times P_{{\text{{orb, max}}}}={np.round(period/2, 2)}$ days')
     axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, label = fr'$2 \times P_{{\text{{orb, max}}}}={np.round(2*period, 2)}$ days')
@@ -137,7 +141,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     axs[0, 0].legend(loc = 'upper left')
 
     # Fold on period at 1/2 * max power
-    phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power/2)
+    phase_lightcurve = lightcurve.fold(period = period/2)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 0].set_title(r'$\mathbf{1}$: Folded on $\frac{1}{2} \times P_{\text{orb, max}}$', fontsize=12)
@@ -150,7 +154,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     axs[1,0].legend()
     
     # Fold on max power
-    phase_lightcurve = lightcurve.fold(period = periodogram.period_at_max_power)
+    phase_lightcurve = lightcurve.fold(period = period)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[0, 1].set_title(r'$\mathbf{2}$: Folded on $P_{\text{orb, max}}$', fontsize=12)
@@ -163,7 +167,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     axs[0,1].legend()
     
     # Fold on 2* max power
-    phase_lightcurve = lightcurve.fold(period = 2*periodogram.period_at_max_power)
+    phase_lightcurve = lightcurve.fold(period = 2*period)
     bin_value = find_bin_value(phase_lightcurve, cadence)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 1].set_title(r'$\mathbf{3}$: Folded on $2 \times P_{\text{orb, max}}$', fontsize=12)
@@ -233,7 +237,7 @@ def append_to_csv(filename, row):
     
     # Open file in append mode
     with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ["Star", "Orbital Period(hours)"]
+        fieldnames = ["Star", "Orbital Period(days)"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Write header if file doesn't exist
