@@ -12,6 +12,10 @@ from filtering import *
 
 
 def main():
+    # Check if raw data has been converted
+    if not exists('wdss_data.csv'):
+        commaize('raw_wdss_data.csv', 'wdss_data.csv')
+
     # Cadence wanting to use
     cadence = 120
 
@@ -123,7 +127,7 @@ def main():
         axs[1, 1].set_title('Flux - Fitted Sine Wave', fontsize=12)
         axs[1, 1].set_xlabel('Time (days)', fontsize = 10)
         axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
-        axs[1, 1].plot(time, subtracted_data)
+        axs[1, 1].plot(time, subtracted_data) # maybe make me into scatter
         axs[1, 1].set_xlim(min(time), min(time) + 1)
 
         plt.show()
