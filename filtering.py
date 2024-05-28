@@ -187,6 +187,30 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
         return 2*period
     else:
         return False  
+    
+
+"""
+    Add commas to raw CSV file
+    Name:       commaize()
+    Parameters: 
+                raw_filename: raw CSV file
+                new_filename: new CSV file
+    Returns:
+                None
+"""
+def commaize(raw_filename, new_filename):
+    with open(raw_filename, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter='\t')
+
+        with open(new_filename, 'w', newline='') as outfile:
+            writer = csv.writer(outfile)
+            
+            # Iterate through each row
+            for row in reader:
+                # Replace spaces for commas for each element
+                modified_row = [column.replace(' ', ',') for column in row]
+                
+                writer.writerow(modified_row)
 
 
 """
