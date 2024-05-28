@@ -8,10 +8,14 @@ from os.path import exists
 import pandas as pd
 import seaborn as sns
 
-from filtering import *
+from file_editing import *
+from refinement import *
 
 
 def main():
+    # Choose how to run
+    all_at_once = False
+
     # Cadence wanting to use
     cadence = 120
 
