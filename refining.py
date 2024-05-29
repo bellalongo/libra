@@ -2,7 +2,6 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import sys
 
 
 # Global variables
@@ -196,7 +195,6 @@ def sine_wave(x, amplitude, frequency, phase):
     return amplitude * np.sin((2 * np.pi * frequency * x) + phase)
 
 
-
 """
     Event function that determines if a key was clicked
     Name:       on_key()
@@ -212,7 +210,7 @@ def on_key(event, purpose):
 
     if purpose == 'Period selection':
         if event.key not in period_selection_keys:
-            sys.exit("Invalid key input, select '1', '2', '3', or 'n'")
+            print("Invalid key input, select '1', '2', '3', or 'n'")
         else:
             best_period_list.append(event.key)
             if event.key == 'n':
@@ -222,10 +220,10 @@ def on_key(event, purpose):
             plt.close()
     elif purpose == 'Real period':
         if event.key not in real_period_keys:
-            sys.exit("Invalid key input, select 'y' or 'n'")
+            print("Invalid key input, select 'y' or 'n'")
         else:
             period_bool_list.append(event.key == 'y')
             print('Loading next plot ... \n')
             plt.close()
     else:
-        sys.exit("Invalid purpose, select 'Period selection' or 'Real period'")
+        print("Invalid purpose, select 'Period selection' or 'Real period'")
