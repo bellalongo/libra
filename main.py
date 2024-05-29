@@ -9,7 +9,7 @@ import pandas as pd
 import seaborn as sns
 
 from file_editing import *
-from refinement import *
+from refining import *
 
 
 def main():
@@ -56,7 +56,6 @@ def main():
         periodogram = lightcurve.to_periodogram(oversample_factor = 10, 
                                                 minimum_period = (2*cadence*u.second).to(u.day).value, 
                                                 maximum_period = 14)
-        
         # Choose the best period candidate
         best_period = select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag)
         if not best_period:
