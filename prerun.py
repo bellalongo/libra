@@ -89,7 +89,7 @@ def load_plots():
         os.remove(porb_filename)
 
     # Iterate through all the images
-    for i, image in enumerate(images):
+    for i, image in enumerate(images): # MAKE SURE CORRECT STAR DATA AND THAT TIC'S FOR IMAGE AND ROW MATCH
         current_image = os.path.join('preload/plots', image)
         image_name, _ = os.path.splitext(image)
 

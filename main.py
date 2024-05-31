@@ -63,12 +63,12 @@ def main():
                                                     maximum_period = 14)
             
             # Choose the best period candidate
-            best_period = select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag)
+            best_period = select_period(lightcurve, periodogram, literature_period, star_name, star_imag)
             if not best_period:
                 continue
 
             # Make period plot
-            period_selection_plots(lightcurve, periodogram, cadence, best_period, literature_period, star_name, star_imag)
+            period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
 
             plt.show()
 

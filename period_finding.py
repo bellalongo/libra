@@ -2,6 +2,7 @@ import astropy.units as u
 import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
 import seaborn as sns
 
 
@@ -50,7 +51,7 @@ def append_lightcurves(result, result_exposures, cadence):
                 periodogram: periodogram of the lightcurve
     Returns:
                 boolean: True if the period is real, False if not real
-                period: period at max power
+                cutoff: 5 sigma line cut off
 """
 def is_real_period(periodogram, period):
     # Remove NaNs from the periodogram
@@ -62,10 +63,10 @@ def is_real_period(periodogram, period):
     std_dev = np.std(periodogram_power)
 
     # Check if within 5 sigma range
-    if (abs(period - np.median(periodogram_period)) > 5 * std_dev) or (abs(period - np.median(periodogram_period)) > 4 * std_dev):
-        return True
+    if (abs(period - np.median(periodogram_period)) > 5 * std_dev):
+        return True, 5*std_dev
     else:
-        return False
+        return False, 5*std_dev
     
 
 """
@@ -73,7 +74,7 @@ def is_real_period(periodogram, period):
     Name:       find_bin_value()
     Parameters:
                 lightcurve: current star's lightcurve
-                num_bins: desired number of bins (best value is the cadence)
+                num_bins: desired number of bins
     Returns:
                 bin_value: number of minutes for each bin
 """
@@ -94,9 +95,9 @@ def find_bin_value(lightcurve, num_bins):
                 literature_period: pre-calculated period, if any 
     Returns:
 """
-def select_period(lightcurve, periodogram, literature_period, cadence, star_name, star_imag):
+def select_period(lightcurve, periodogram, literature_period, star_name, star_imag):
     period = periodogram.period_at_max_power.value 
-    is_real = is_real_period(periodogram, period)
+    is_real, cutoff = is_real_period(periodogram, period)
 
     # Plot basics
     sns.set_style("darkgrid")
@@ -125,12 +126,13 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
                         label = fr'$\frac{{1}}{{2}} \times P_{{\text{{orb, max}}}}={np.round(period/2, 2)}$ days')
     axs[0, 0].axvline(x=2*period, color = '#E3BE4F', ls = 'dashed', lw = 2, 
                         label = fr'$2 \times P_{{\text{{orb, max}}}}={np.round(2*period, 2)}$ days')
+    axs[0,0].axhline(y = cutoff, color = '#6E8EC4', ls = 'dashed', lw = 2, label = '5-sigma cutoff')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
     # Fold on period at 1/2 * max power
     phase_lightcurve = lightcurve.fold(period = period/2)
-    bin_value = find_bin_value(phase_lightcurve, cadence)
+    bin_value = find_bin_value(phase_lightcurve, 50)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 0].set_title(r'$\mathbf{1}$: Folded on $\frac{1}{2} \times P_{\text{orb, max}}$', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
@@ -143,7 +145,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     
     # Fold on max power
     phase_lightcurve = lightcurve.fold(period = period)
-    bin_value = find_bin_value(phase_lightcurve, cadence)
+    bin_value = find_bin_value(phase_lightcurve, 50)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[0, 1].set_title(r'$\mathbf{2}$: Folded on $P_{\text{orb, max}}$', fontsize=12)
     axs[0, 1].set_xlabel('Phase', fontsize = 10)
@@ -156,7 +158,7 @@ def select_period(lightcurve, periodogram, literature_period, cadence, star_name
     
     # Fold on 2* max power
     phase_lightcurve = lightcurve.fold(period = 2*period)
-    bin_value = find_bin_value(phase_lightcurve, cadence)
+    bin_value = find_bin_value(phase_lightcurve, 50)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
     axs[1, 1].set_title(r'$\mathbf{3}$: Folded on $2 \times P_{\text{orb, max}}$', fontsize=12)
     axs[1, 1].set_xlabel('Phase', fontsize = 10)
@@ -202,7 +204,6 @@ def sine_wave(x, amplitude, frequency, phase):
     Parameters: 
                 lightcurve: current star's lightcurve
                 periodogram: current star's periodogram
-                cadence: desired cadence
                 best_period: predetermined star's most likely orbital period
                 literature_period: current star's documented orbital period
                 star_name: current star's TIC name
@@ -210,23 +211,27 @@ def sine_wave(x, amplitude, frequency, phase):
     Returns:
                 None
 """
-def period_selection_plots(lightcurve, periodogram, cadence, best_period, literature_period, star_name, star_imag):
+def period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag):
     # Determine if the period is probable
-    is_real = is_real_period(periodogram, best_period)
+    is_real, cutoff = is_real_period(periodogram, best_period)
 
     # Define folded and binned lightcurve
     phase_lightcurve = lightcurve.fold(period = best_period)
-    bin_value = find_bin_value(phase_lightcurve, cadence)
+    bin_value = find_bin_value(phase_lightcurve, 50)
     binned_lightcurve = phase_lightcurve.bin(bin_value*u.min) 
 
     # Lightcurve data
     time = lightcurve.time.value
     flux = lightcurve.flux.value
 
+    # Get the power at the best period
+    interp_func = interp1d(periodogram.period.value, periodogram.power.value, kind='linear', bounds_error=False, fill_value=np.nan)
+    power_at_best_period = interp_func(best_period)
+
     # Make an lmfit object and fit it
     model = lmfit.Model(sine_wave)
-    params = model.make_params(amplitude=max(periodogram.power.value) , # FIX ME!!!!!! to match girilie found 
-                            frequency = 1/periodogram.period_at_max_power.value, 
+    params = model.make_params(amplitude = power_at_best_period , 
+                            frequency = 1/best_period, 
                             phase=0.0)
     result = model.fit(flux, params, x=time)
 
@@ -249,7 +254,8 @@ def period_selection_plots(lightcurve, periodogram, cadence, best_period, litera
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power)
     if literature_period != 0.0: axs[0,0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
-    axs[0, 0].axvline(x=best_period, color = '#141B41', lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days')
+    axs[0, 0].axvline(x=best_period, color = '#FBB13C', ls = 'dashed', lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days') # fix me 
+    axs[0,0].axhline(y = cutoff, color = '#171738', ls = 'dashed', label = '5-sigma cutoff')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
