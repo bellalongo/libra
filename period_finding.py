@@ -252,10 +252,10 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 0].set_title('Periodogram', fontsize=12)
     axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
-    axs[0, 0].plot(periodogram.period, periodogram.power, alpha = 0.6)
-    if literature_period != 0.0: axs[0,0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
+    axs[0, 0].plot(periodogram.period, periodogram.power, alpha = 0.5)
+    axs[0, 0].axhline(y = cutoff, color = '#7865A4', label = '5-sigma cutoff')
     axs[0, 0].axvline(x=best_period, color = "#101935", ls = (0, (3,5)), lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days') 
-    axs[0,0].axhline(y = cutoff, color = '#974996', ls = 'dashed', lw = 2, label = '5-sigma cutoff')
+    if literature_period != 0.0: axs[0, 0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
