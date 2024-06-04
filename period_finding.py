@@ -1,6 +1,7 @@
 import astropy.units as u
 import lmfit
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import numpy as np
 from scipy.interpolate import interp1d
 import seaborn as sns
@@ -259,7 +260,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
     axs[0, 0].plot(periodogram.period, periodogram.power, alpha = 0.5)
-    axs[0, 0].axhline(y = cutoff, color = '#7865A4', label = '5-sigma cutoff')
+    axs[0, 0].axhline(y = cutoff, color = '#4A5D96', label = '5-sigma cutoff')
     axs[0, 0].axvline(x=best_period, color = "#101935", ls = (0, (3,5)), lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days') 
     if literature_period != 0.0: axs[0, 0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
     axs[0, 0].set_xscale('log') 
@@ -281,7 +282,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
                     lightcurve.flux - lightcurve.flux_err, 
                     lightcurve.flux + lightcurve.flux_err, lw=2)
     axs[0, 1].plot(time, result.best_fit, color= '#051923', label = 'Fitted Sine Wave')
-    axs[0, 1].set_xlim(min(time), min(time) + 1)
+    axs[0, 1].set_xlim(min(time) + 1, min(time) + 2)
     axs[0, 1].legend()
 
     # Subtract sine wave
@@ -290,7 +291,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[1, 1].set_xlabel('Time (days)', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 1].plot(time, residuals) # maybe make me into scatter
-    axs[1, 1].set_xlim(min(time), min(time) + 1)
+    axs[1, 1].set_xlim(min(time) + 1, min(time) + 2)
 
     return binned_lightcurve, result.best_fit, residuals
 
@@ -315,7 +316,11 @@ def effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, resi
     # Plot basics
     sns.set_style("darkgrid")
     sns.set_theme(rc={'axes.facecolor':'#F4F6F3'})
-    fig, axs = plt.subplots(3, 1, figsize=(14, 8))
+    fig = plt.figure(figsize=(14, 8))
+    gs = gridspec.GridSpec(2, 2, height_ratios=[1.3, 1])
+    ax1 = fig.add_subplot(gs[0, :])
+    ax2 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
     plt.subplots_adjust(hspace=0.5)
     fig.text(0.5, 0.02, f'{star_name}', ha='center', fontsize=16, fontweight = 'bold')
 
@@ -333,31 +338,31 @@ def effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, resi
 
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, effect))
 
-    # Plot binned lightcurve
-    axs[0].set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
-    axs[0].set_xlabel('Phase', fontsize = 10)
-    axs[0].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[0].vlines(binned_lightcurve.phase.value, 
-                    binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                    binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#4E6142', lw=2)
-    
     # Plot lightcurve with fit
-    axs[1].set_title('Lightcurve', fontsize=13)
-    axs[1].set_xlabel('Time (days)', fontsize = 10)
-    axs[1].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[1].vlines(lightcurve.time.value, 
+    ax1.set_title('Lightcurve', fontsize=13)
+    ax1.set_xlabel('Time (days)', fontsize = 10)
+    ax1.set_ylabel('Normalized Flux', fontsize = 10)
+    ax1.vlines(lightcurve.time.value, 
                     lightcurve.flux - lightcurve.flux_err, 
                     lightcurve.flux + lightcurve.flux_err, color = '#4E6142', lw=2)
-    axs[1].plot(time, sine_fit, color= '#2D1711', label = 'Fitted Sine Wave')
-    axs[1].set_xlim(min(time), min(time) + 2)
-    axs[1].legend()
+    ax1.plot(time, sine_fit, color= '#000000', lw = 2, label = 'Fitted Sine Wave')
+    ax1.set_xlim(min(time) + 1, min(time) + 2)
+    ax1.legend()
+
+    # Plot binned lightcurve
+    ax2.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
+    ax2.set_xlabel('Phase', fontsize = 10)
+    ax2.set_ylabel('Normalized Flux', fontsize = 10)
+    ax2.vlines(binned_lightcurve.phase.value, 
+                    binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                    binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#4E6142', lw=2)
 
     # Plot residuals
-    axs[2].set_title('Flux - Fitted Sine Wave', fontsize=13)
-    axs[2].set_xlabel('Time (days)', fontsize = 10)
-    axs[2].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[2].plot(time, residuals, color= '#4E6142') 
-    axs[2].set_xlim(min(time), min(time) + 1)
+    ax3.set_title('Flux - Fitted Sine Wave', fontsize=13)
+    ax3.set_xlabel('Time (days)', fontsize = 10)
+    ax3.set_ylabel('Normalized Flux', fontsize = 10)
+    ax3.plot(time, residuals, color= '#4E6142') 
+    ax3.set_xlim(min(time) + 1, min(time) + 2)
 
 
 """

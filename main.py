@@ -14,7 +14,7 @@ from period_finding import *
 
 def main():
     # Choose how to run
-    preload = False # if you want to preload all plots before selecting periods
+    preload = True # if you want to preload all plots before selecting periods
     autopilot = False # have the computer do all the work for you 
 
     # Cadence wanting to use
@@ -80,9 +80,9 @@ def main():
 
             # Save data to csv
             curr_index = len(doppler_beaming_bool_list) - 1
-
             row = {'Star' : star_name, 
                    'Orbital Period(days)' : best_period,
+                   'i Magnitude': star_imag,
                    'Transits': transits_bool_list[curr_index],
                    'Ellipsoidal': ellipsoidal_bool_list[curr_index],
                    'Radiation': radiation_bool_list[curr_index],

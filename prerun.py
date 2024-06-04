@@ -10,6 +10,11 @@ from file_editing import *
 from period_finding import *
 
 
+star_data_filename = 'preload/all_star_data.csv'
+folders = ['transit_plots', 'ellipsoidal_plots', 'radiation_plots', 'doppler_plots']
+lightcurve_effects = ['Transits', 'Ellipsoidal', 'Radiation', 'Doppler beaming']
+
+
 """
     Saves images of all plots to be iterated through later
     Name:       preload_plots()
@@ -20,9 +25,6 @@ from period_finding import *
                 None
 """
 def preload_plots(df, cadence):
-    # Initialize csv where stores all of the star's data
-    star_data_filename = 'preload/star_data.csv'
-
     # Iterate through all rows with an orbital period
     for _, row in tqdm(df.iterrows(), desc="Processing lightcurves", total = len(df)):
         # Pull data for that star
@@ -40,24 +42,32 @@ def preload_plots(df, cadence):
         star_name = 'TIC ' + str(lightcurve.meta['TICID'])
         star_imag = row['i']
         literature_period = (row['porb']*u.hour).to(u.day).value
-        plot_filename = 'preload/plots/' + star_name + '.png'
+        period_plot_filename = 'preload/period_plots/' + star_name + '.png'
 
         # Check if plot already exists
-        if exists(plot_filename):
-            continue
+        if exists(period_plot_filename):
+            os.remove(period_plot_filename)
+            os.remove('preload/transit_plots/' + star_name + '.png')
+            os.remove('preload/ellipsoidal_plots/' + star_name + '.png')
+            os.remove('preload/radiation_plots/' + star_name + '.png')
+            os.remove('preload/doppler_plots/' + star_name + '.png')
 
         # Get periodogram
         periodogram = lightcurve.to_periodogram(oversample_factor = 10, 
                                                 minimum_period = (2*cadence*u.second).to(u.day).value, 
                                                 maximum_period = 14)
         
-        # Determine if the period is probable
+        # Save period plot
         best_period = periodogram.period_at_max_power.value 
         binned_lightcurve, sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
-
-        # Save plot
-        plt.savefig(plot_filename)
+        plt.savefig(period_plot_filename)
         plt.clf()
+
+        # Save effects plots
+        for i, effect in enumerate(lightcurve_effects):
+                effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, residuals, star_name)
+                plt.savefig('preload/' + folders[i] + '/' + star_name + '.png')
+                plt.clf()
 
         # Save star data to the csv
         row = {"Star" : star_name, "Orbital Period(days)" : best_period}
