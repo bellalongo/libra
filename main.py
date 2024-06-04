@@ -14,7 +14,8 @@ from period_finding import *
 
 def main():
     # Choose how to run
-    preload = False
+    preload = False # if you want to preload all plots before selecting periods
+    autopilot = False # have the computer do all the work for you 
 
     # Cadence wanting to use
     cadence = 120
@@ -35,7 +36,7 @@ def main():
     df = df[['iau_name', 'i', 'porb', 'porbe']] 
 
     # Check for preload
-    if preload: # adjust how im run
+    if preload:
         preload_plots(df, cadence)
         load_plots()
     else:
@@ -63,20 +64,30 @@ def main():
                                                     maximum_period = 14)
             
             # Choose the best period candidate
-            best_period = select_period(lightcurve, periodogram, literature_period, star_name, star_imag)
-            if not best_period:
-                continue
+            best_period = select_period_plots(lightcurve, periodogram, literature_period, star_name, star_imag)
+            if not best_period: continue
 
             # Make period plot
-            period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
-
+            binned_lightcurve, sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
             plt.show()
+            if not period_bool_list[len(period_bool_list) - 1]: continue
 
-            # Check if the was marked as True -> maybe make into a function
-            curr_index = len(period_bool_list) - 1
-            if period_bool_list[curr_index]:
-                row = {"Star" : star_name, "Orbital Period(days)" : best_period}
-                append_to_csv(porb_filename, row)
+            # Make lightcurve effects plot
+            lightcurve_effects = ['Transits', 'Ellipsoidal', 'Radiation', 'Doppler beaming']
+            for effect in lightcurve_effects:
+                effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, residuals, star_name)
+                plt.show()
+
+            # Save data to csv
+            curr_index = len(doppler_beaming_bool_list) - 1
+
+            row = {'Star' : star_name, 
+                   'Orbital Period(days)' : best_period,
+                   'Transits': transits_bool_list[curr_index],
+                   'Ellipsoidal': ellipsoidal_bool_list[curr_index],
+                   'Radiation': radiation_bool_list[curr_index],
+                   'Doppler beaming': doppler_beaming_bool_list[curr_index]} # will only hit this line if the period is real
+            append_to_csv(porb_filename, row)
 
 
 if __name__ == '__main__':

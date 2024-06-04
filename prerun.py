@@ -10,10 +10,6 @@ from file_editing import *
 from period_finding import *
 
 
-# Global variables
-preload_period_bool_list = []
-
-
 """
     Saves images of all plots to be iterated through later
     Name:       preload_plots()
@@ -57,7 +53,7 @@ def preload_plots(df, cadence):
         
         # Determine if the period is probable
         best_period = periodogram.period_at_max_power.value 
-        period_selection_plots(lightcurve, periodogram, cadence, best_period, literature_period, star_name, star_imag)
+        binned_lightcurve, sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
 
         # Save plot
         plt.savefig(plot_filename)
@@ -95,7 +91,7 @@ def load_plots():
 
         # Show the image
         fig = plt.figure(figsize=(14, 8))
-        cid = fig.canvas.mpl_connect('key_press_event', lambda event: prerun_onkey(event))
+        cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, 'Real period')) # MAKE SURE I WORK
         plt.axis('off')
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
@@ -104,27 +100,8 @@ def load_plots():
         plt.show()
 
         # Check if it was marked as real
-        if preload_period_bool_list[i]:
+        if period_bool_list[i]: # CHANGE DATA THAT IS SAVED HERE
             star_name = stars_df.iloc[i]['Star']
             period = stars_df.iloc[i]['Orbital Period(days)']
             row = {"Star" : star_name, "Orbital Period(days)" : period}
             append_to_csv(porb_filename, row)
-
-
-"""
-    Event function that determines if a key was clicked
-    Name:       prerun_onkey()
-    Parameters: 
-                event: key press event
-    Returns:
-                None
-"""
-def prerun_onkey(event):
-    period_keys = {'y', 'n'}
-
-    if event.key not in period_keys:
-        print("Invalid key input, select 'y' or 'n'")
-    else:
-        preload_period_bool_list.append(event.key == 'y')
-        print('Loading next plot ... \n')
-        plt.close()
