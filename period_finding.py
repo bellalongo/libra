@@ -242,6 +242,10 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
                             phase=0.0)
     result = model.fit(flux, params, x=time)
 
+    # Calculate the time points for the period lines
+    best_fit_period = 1 / (result.params['frequency'].value)
+    time_points = np.arange(min(time), max(time), best_fit_period)
+
     # Plot basics
     sns.set_theme()
     fig, axs = plt.subplots(2, 2, figsize=(14, 8))
@@ -259,10 +263,10 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 0].set_title('Periodogram', fontsize=12)
     axs[0, 0].set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
     axs[0, 0].set_ylabel('Power', fontsize=10)
-    axs[0, 0].plot(periodogram.period, periodogram.power, alpha = 0.5)
-    axs[0, 0].axhline(y = cutoff, color = '#4A5D96', label = '5-sigma cutoff')
-    axs[0, 0].axvline(x=best_period, color = "#101935", ls = (0, (3,5)), lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days') 
+    axs[0, 0].plot(periodogram.period, periodogram.power, color = '#9AADD0')
+    axs[0, 0].axvline(x=best_period, color = "#101935", ls = (0, (4,5)), lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 2)}$ days') 
     if literature_period != 0.0: axs[0, 0].axvline(x=literature_period, color = '#A30015', label = fr'Literature $P_{{\text{{orb}}}}={np.round(literature_period, 2)}$ days')
+    axs[0, 0].axhline(y = cutoff, color = '#4A5D96', ls = (0, (4,5)), lw = 2, label = '5-sigma cutoff')
     axs[0, 0].set_xscale('log') 
     axs[0, 0].legend(loc = 'upper left')
 
@@ -272,7 +276,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 0].vlines(binned_lightcurve.phase.value, 
                     binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                    binned_lightcurve.flux + binned_lightcurve.flux_err, lw=2)
+                    binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#9AADD0', lw = 2)
 
     # Plot the fitted sin wave
     axs[0, 1].set_title('Lightcurve', fontsize=12)
@@ -280,9 +284,12 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 1].set_ylabel('Normalized Flux', fontsize = 10)
     axs[0, 1].vlines(lightcurve.time.value, 
                     lightcurve.flux - lightcurve.flux_err, 
-                    lightcurve.flux + lightcurve.flux_err, lw=2)
-    axs[0, 1].plot(time, result.best_fit, color= '#051923', label = 'Fitted Sine Wave')
+                    lightcurve.flux + lightcurve.flux_err, color = '#9AADD0')
+    axs[0, 1].plot(time, result.best_fit, color= '#101935', label = 'Fitted Sine Wave')
     axs[0, 1].set_xlim(min(time) + 1, min(time) + 2)
+    # Add vertical lines at each period interval
+    for tp in time_points:
+        axs[0, 1].axvline(tp, color = '#4A5D96', ls = (0, (4,5)), lw = 2, label = fr'$P_{{\text{{orb, sine}}}}={np.round(best_fit_period, 2)}$ days' if tp == time_points[0] else "")
     axs[0, 1].legend()
 
     # Subtract sine wave
@@ -290,7 +297,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[1, 1].set_title('Flux - Fitted Sine Wave', fontsize=12)
     axs[1, 1].set_xlabel('Time (days)', fontsize = 10)
     axs[1, 1].set_ylabel('Normalized Flux', fontsize = 10)
-    axs[1, 1].plot(time, residuals) # maybe make me into scatter
+    axs[1, 1].plot(time, residuals, color = '#9AADD0') # maybe make me into scatter
     axs[1, 1].set_xlim(min(time) + 1, min(time) + 2)
 
     return binned_lightcurve, result.best_fit, residuals
