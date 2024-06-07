@@ -1,4 +1,5 @@
 import astropy.units as u
+from lightkurve import LightCurve
 import lmfit
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -243,8 +244,13 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     result = model.fit(flux, params, x=time)
 
     # Calculate the time points for the period lines
-    best_fit_period = 1 / (result.params['frequency'].value)
-    time_points = np.arange(min(time), max(time), best_fit_period)
+    sine_period = 1 / (result.params['frequency'].value)
+    time_points = np.arange(min(time), max(time), sine_period)
+
+    # Fold sine wave on lightcurve
+    sine_lightcurve = LightCurve(time = time, flux = result.best_fit)
+    sine_phase_lightcurve = sine_lightcurve.fold(period = best_period)
+    sine_binned_lightcurve = sine_phase_lightcurve.bin(bin_value*u.min)
 
     # Plot basics
     sns.set_theme()
@@ -271,12 +277,14 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 0].legend(loc = 'upper left')
 
     # Plot binned lightcurve
-    axs[1, 0].set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=12)
+    axs[1, 0].set_title(r'Lightcurve Folded on $P_{\text{orb, best}}$', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 0].vlines(binned_lightcurve.phase.value, 
                     binned_lightcurve.flux - binned_lightcurve.flux_err, 
                     binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#9AADD0', lw = 2)
+    axs[1, 0].plot(sine_binned_lightcurve.phase.value, sine_binned_lightcurve.flux.value, color = '#101935', label = 'Folded Sine Wave')
+    axs[1, 0].legend()
 
     # Plot the fitted sin wave
     axs[0, 1].set_title('Lightcurve', fontsize=12)
@@ -289,7 +297,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 1].set_xlim(min(time) + 1, min(time) + 2)
     # Add vertical lines at each period interval
     for tp in time_points:
-        axs[0, 1].axvline(tp, color = '#4A5D96', ls = (0, (4,5)), lw = 2, label = fr'$P_{{\text{{orb, sine}}}}={np.round(best_fit_period, 2)}$ days' if tp == time_points[0] else "")
+        axs[0, 1].axvline(tp, color = '#4A5D96', ls = (0, (4,5)), lw = 2, label = fr'$P_{{\text{{orb, sine}}}}={np.round(sine_period, 2)}$ days' if tp == time_points[0] else "")
     axs[0, 1].legend()
 
     # Subtract sine wave
