@@ -1,5 +1,4 @@
 import lightkurve as lk
-import lmfit
 import matplotlib.image as mpimg
 import os
 from os.path import exists
@@ -11,9 +10,8 @@ from period_finding import *
 
 
 star_data_filename = 'preload/all_star_data.csv'
-folders = ['transit_plots', 'ellipsoidal_plots', 'radiation_plots', 'doppler_plots']
-lightcurve_effects = ['Transits', 'Ellipsoidal', 'Radiation', 'Doppler beaming']
-
+folders = ['transit_plots', 'flare_plots', 'radiation_plots', 'doppler_plots', 'ellipsoidal_plots'] # make sure lightcurve_effects matches below order!!!
+lightcurve_effects = ['Transits', 'Flares', 'Radiation', 'Doppler beaming', 'Ellipsoidal']
 
 """
     Saves images of all plots to be iterated through later
@@ -55,6 +53,7 @@ def preload_plots(df, cadence):
             os.remove('preload/ellipsoidal_plots/' + star_name + '.png')
             os.remove('preload/radiation_plots/' + star_name + '.png')
             os.remove('preload/doppler_plots/' + star_name + '.png')
+            os.remove('preload/flare_plots/' + star_name + '.png')
 
         # Get periodogram
         periodogram = lightcurve.to_periodogram(oversample_factor = 10, 
@@ -63,15 +62,15 @@ def preload_plots(df, cadence):
         
         # Save period plot
         best_period = periodogram.period_at_max_power.value 
-        binned_lightcurve, sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
+        binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
         plt.savefig(period_plot_filename)
-        plt.clf()
+        plt.close()
 
         # Save effects plots
         for i, effect in enumerate(lightcurve_effects):
-            effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, residuals, star_name)
+            effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals, star_name, star_imag)
             plt.savefig('preload/' + folders[i] + '/' + star_name + '.png')
-            plt.clf()
+            plt.close()
 
         # Save star data to the csv
         row = {'Star' : star_name, 'Orbital Period(days)' : best_period, 'i Magnitude': star_imag}
@@ -135,7 +134,8 @@ def load_plots():
                 'Orbital Period(days)' : star_row['Orbital Period(days)'].values[0],
                 'i Magnitude': star_row['i Magnitude'].values[0],
                 'Transits': transits_bool_list[curr_index],
-                'Ellipsoidal': ellipsoidal_bool_list[curr_index],
+                'Flares': flare_bool_list[curr_index],
                 'Radiation': radiation_bool_list[curr_index],
-                'Doppler beaming': doppler_beaming_bool_list[curr_index]} # will only hit this line if the period is real
+                'Doppler beaming': doppler_beaming_bool_list[curr_index],
+                'Ellipsoidal': ellipsoidal_bool_list[curr_index]} # will only hit this line if the period is real
         append_to_csv(porb_filename, row)

@@ -45,7 +45,7 @@ def append_to_csv(filename, row):
     
     # Open file in append mode
     with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ['Star', 'Orbital Period(days)', 'i Magnitude', 'Transits', 'Ellipsoidal', 'Radiation', 'Doppler beaming']
+        fieldnames = ['Star', 'Orbital Period(days)', 'i Magnitude', 'Transits', 'Flares', 'Radiation', 'Doppler beaming', 'Ellipsoidal']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Write header if file doesn't exist

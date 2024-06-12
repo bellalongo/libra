@@ -1,11 +1,9 @@
 import astropy.units as u
 import lightkurve as lk
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 from os.path import exists
 import pandas as pd
-import seaborn as sns
 
 from file_editing import *
 from prerun import *
@@ -37,7 +35,7 @@ def main():
 
     # Check for preload
     if preload:
-        preload_plots(df, cadence)
+        # preload_plots(df, cadence)
         load_plots()
     else:
         # Iterate through all rows with an orbital period
@@ -68,14 +66,14 @@ def main():
             if not best_period: continue
 
             # Make period plot
-            binned_lightcurve, sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
+            binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
             plt.show()
             if not period_bool_list[len(period_bool_list) - 1]: continue
 
             # Make lightcurve effects plot
-            lightcurve_effects = ['Transits', 'Ellipsoidal', 'Radiation', 'Doppler beaming']
+            lightcurve_effects = ['Transits', 'Flares', 'Radiation', 'Doppler beaming', 'Ellipsoidal'] # maybe make me a global?
             for effect in lightcurve_effects:
-                effects_selection_plot(effect, lightcurve, binned_lightcurve, sine_fit, residuals, star_name)
+                effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals, star_name, star_imag)
                 plt.show()
 
             # Save data to csv
@@ -84,9 +82,10 @@ def main():
                    'Orbital Period(days)' : best_period,
                    'i Magnitude': star_imag,
                    'Transits': transits_bool_list[curr_index],
-                   'Ellipsoidal': ellipsoidal_bool_list[curr_index],
+                   'Flares': flare_bool_list[curr_index],
                    'Radiation': radiation_bool_list[curr_index],
-                   'Doppler beaming': doppler_beaming_bool_list[curr_index]} # will only hit this line if the period is real
+                   'Doppler beaming': doppler_beaming_bool_list[curr_index],
+                   'Ellipsoidal': ellipsoidal_bool_list[curr_index]} # will only hit this line if the period is real
             append_to_csv(porb_filename, row)
 
 
