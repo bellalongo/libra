@@ -1,4 +1,5 @@
 import lightkurve as lk
+import math
 import matplotlib.image as mpimg
 import os
 from os.path import exists
@@ -10,8 +11,8 @@ from period_finding import *
 
 
 star_data_filename = 'preload/all_star_data.csv'
-folders = ['transit_plots', 'flare_plots', 'radiation_plots', 'doppler_plots', 'ellipsoidal_plots'] # make sure lightcurve_effects matches below order!!!
-lightcurve_effects = ['Transits', 'Flares', 'Radiation', 'Doppler beaming', 'Ellipsoidal']
+folders = ['eclipsing_plots', 'flare_plots', 'doppler_plots'] # make sure lightcurve_effects matches below order!!!
+lightcurve_effects = ['Eclipsing', 'Flares', 'Doppler beaming']
 
 """
     Saves images of all plots to be iterated through later
@@ -49,9 +50,7 @@ def preload_plots(df, cadence):
         # Check if plot already exists
         if exists(period_plot_filename):
             os.remove(period_plot_filename)
-            os.remove('preload/transit_plots/' + star_name + '.png')
-            os.remove('preload/ellipsoidal_plots/' + star_name + '.png')
-            os.remove('preload/radiation_plots/' + star_name + '.png')
+            os.remove('preload/eclipsing_plots/' + star_name + '.png')
             os.remove('preload/doppler_plots/' + star_name + '.png')
             os.remove('preload/flare_plots/' + star_name + '.png')
 
@@ -62,18 +61,18 @@ def preload_plots(df, cadence):
         
         # Save period plot
         best_period = periodogram.period_at_max_power.value 
-        binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
+        sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
         plt.savefig(period_plot_filename)
         plt.close()
 
         # Save effects plots
         for i, effect in enumerate(lightcurve_effects):
-            effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals, star_name, star_imag)
+            effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fit, residuals, star_name, star_imag)
             plt.savefig('preload/' + folders[i] + '/' + star_name + '.png')
             plt.close()
 
         # Save star data to the csv
-        row = {'Star' : star_name, 'Orbital Period(days)' : best_period, 'i Magnitude': star_imag}
+        row = {'Star' : star_name, 'Orbital Period(days)' : best_period, 'Literature Period(days)': literature_period, 'i Magnitude': star_imag}
         append_to_csv(star_data_filename, row)
 
 
@@ -87,7 +86,7 @@ def preload_plots(df, cadence):
 """
 def load_plots():
     # Load all plot images in the directory
-    images = [i for i in os.listdir('preload/period_plots')]
+    images = [i for i in os.listdir('preload/period_plots') if i.startswith('TIC')]
 
     # Load dataframe
     stars_df = pd.read_csv(star_data_filename)
@@ -127,15 +126,26 @@ def load_plots():
         
         # Get star data from csv
         star_row = stars_df.loc[stars_df['Star'] == star_name]
+
+        # Check for irradidation and ellipsodial
+        irradiation, ellipsodial = False, False
+        literature_period = star_row['Literature Period(days)'].values[0]
+        best_period = star_row['Orbital Period(days)'].values[0]
+        if literature_period != 0.0:
+            # Irradiation if literature period = best_period
+            if math.isclose(np.abs(best_period - literature_period), 0, rel_tol=1e-2): # maybe change tolerance
+                irradiation = True
+            elif math.isclose(np.abs(best_period / literature_period), 0.5, rel_tol=1e-2):
+                ellipsodial = True
         
         # Save data to csv
         curr_index = len(doppler_beaming_bool_list) - 1
         row = {'Star' : star_name, 
-                'Orbital Period(days)' : star_row['Orbital Period(days)'].values[0],
+                'Orbital Period(days)' : best_period,
                 'i Magnitude': star_row['i Magnitude'].values[0],
-                'Transits': transits_bool_list[curr_index],
+                'Eclipsing': eclipsing_bool_list[curr_index],
                 'Flares': flare_bool_list[curr_index],
-                'Radiation': radiation_bool_list[curr_index],
+                'Irradiation': irradiation,
                 'Doppler beaming': doppler_beaming_bool_list[curr_index],
-                'Ellipsoidal': ellipsoidal_bool_list[curr_index]} # will only hit this line if the period is real
+                'Ellipsoidal': ellipsodial} # will only hit this line if the period is real
         append_to_csv(porb_filename, row)

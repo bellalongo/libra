@@ -11,9 +11,7 @@ import seaborn as sns
 # Global variables
 best_period_list = []
 period_bool_list = []
-transits_bool_list = []
-ellipsoidal_bool_list = [] 
-radiation_bool_list = []
+eclipsing_bool_list = []
 doppler_beaming_bool_list = []
 flare_bool_list = []
 
@@ -216,9 +214,7 @@ def sine_wave(x, amplitude, frequency, phase):
                 star_name: current star's TIC name
                 star_imag: current star's i magnitude 
     Returns:
-                binned_lightcurve: lightcurve folded on best period, put into 50 bins
                 result.best_fit: best fit sine wave for the lightcurve
-                sine_binned_lightcurve: best fit sine wave folded on the period, put into 50 bins
                 residuals: lightcurve flux - best fit sine wave
 """
 def period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag):
@@ -310,7 +306,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[1, 1].plot(time, residuals, color = '#9AADD0') # maybe make me into scatter
     axs[1, 1].set_xlim(min(time) + 1, min(time) + 2)
 
-    return binned_lightcurve, result.best_fit, sine_binned_lightcurve, residuals
+    return result.best_fit, residuals
 
 
 '''
@@ -330,7 +326,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     Returns:
                 None
 '''
-def effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_lightcurve, sine_fit, sine_binned_lightcurve, residuals, star_name, star_imag):
+def effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fit, residuals, star_name, star_imag):
     # Lightcurve data
     time = lightcurve.time.value
 
@@ -342,60 +338,53 @@ def effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_
     fig.text(0.5, 0.928, fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 4)}$ days' , ha='center', fontsize=12)
     fig.text(0.5, 0.02, fr'{star_name},  $i_{{\text{{mag}}}}={star_imag}$', ha='center', fontsize=16)
 
-    # Plot titles
-    if effect == 'Transits' or effect == 'Radiation' or effect == 'Doppler beaming':
-        if effect == 'Transits':
-            plt.suptitle("Press 'y' if there are transits, 'n' if not", fontweight = 'bold')
-        elif effect == 'Radiation':
-            plt.suptitle("Press 'y' if there are signs of radiation, 'n' if not", fontweight = 'bold')
-        elif effect == 'Doppler beaming':
-            plt.suptitle("Press 'y' if there are signs of doppler beaming, 'n' if not", fontweight = 'bold')
+    if effect == 'Eclipsing':
+        plt.suptitle("Press 'y' if there are eclipses, 'n' if not", fontweight = 'bold')
 
-        # Plots for Transits, Radiation and Doppler Beaming
-        gs = gridspec.GridSpec(2, 2, height_ratios=[1.3, 1])
+        # Plots for Eclipsing
+        gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1]) 
         ax1 = fig.add_subplot(gs[0, :])
         ax2 = fig.add_subplot(gs[1, 0])
         ax3 = fig.add_subplot(gs[1, 1])
         plt.subplots_adjust(hspace=0.5)
 
-        # Plot lightcurve with fit
+        # Bin lightcurve
+        phase_lightcurve = lightcurve.fold(period = best_period)
+        bin_value = find_bin_value(phase_lightcurve, 50)
+        binned_lightcurve = phase_lightcurve.bin(bin_value*u.min)
+
+        # Bin Sine Wave
+        sine_lightcurve = LightCurve(time = time, flux = sine_fit)
+        sine_phase_lightcurve = sine_lightcurve.fold(period = best_period)
+        sine_binned_lightcurve = sine_phase_lightcurve.bin(bin_value*u.min)
+
+        # Plot the lightcurve with sine fit
         ax1.set_title('Lightcurve', fontsize=13)
         ax1.set_xlabel('Time (days)', fontsize = 10)
         ax1.set_ylabel('Normalized Flux', fontsize = 10)
-        ax1.scatter(lightcurve.time.value, lightcurve.flux.value, color = '#98A391', s = 4)
-        ax1.plot(time, sine_fit, color= '#000000', lw = 2, label = 'Fitted Sine Wave')
-        ax1.set_xlim(min(time) + 1, min(time) + 5)
+        ax1.scatter(lightcurve.time.value, lightcurve.flux.value, color = '#98A391', s = 2)
+        ax1.plot(time, sine_fit, color= '#000000', lw = 1.5, label = 'Fitted Sine Wave')
         ax1.legend()
 
-        # Plot binned lightcurve
-        ax2.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
-        ax2.set_xlabel('Phase', fontsize = 10)
-        ax2.set_ylabel('Normalized Flux', fontsize = 10)
-        ax2.vlines(binned_lightcurve.phase.value, 
+        # Plot the periodogram
+        ax2.set_title('Periodogram', fontsize=12)
+        ax2.set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
+        ax2.set_ylabel('Power', fontsize=10)
+        ax2.plot(periodogram.period, periodogram.power, color = '#98A391')
+        ax2.axvline(x=best_period, color = '#000000', ls = (0, (4,5)), lw = 2,
+                            label = fr'$P_{{\text{{orb, max}}}}={np.round(best_period, 3)}$ days')
+        ax2.set_xscale('log') 
+        ax2.legend(loc = 'upper left')
+
+        # Plot the binned lightcurve
+        ax3.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
+        ax3.set_xlabel('Phase', fontsize = 10)
+        ax3.set_ylabel('Normalized Flux', fontsize = 10)
+        ax3.vlines(binned_lightcurve.phase.value, 
                         binned_lightcurve.flux - binned_lightcurve.flux_err, 
                         binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#98A391', lw=2)
-        ax2.plot(sine_binned_lightcurve.phase.value, sine_binned_lightcurve.flux.value, color = '#000000', lw = 2, label = 'Folded Sine Wave')
-        ax2.legend()
-
-        # Plot residuals
-        ax3.set_title('Flux - Fitted Sine Wave', fontsize=13)
-        ax3.set_xlabel('Time (days)', fontsize = 10)
-        ax3.set_ylabel('Normalized Flux', fontsize = 10)
-        ax3.scatter(time, residuals, color= '#98A391', s = 3) 
-        ax3.set_xlim(min(time) + 1, min(time) + 5)
-        
-    elif effect == 'Ellipsoidal':
-        plt.suptitle("Press 'y' if the periodogram is ellipsoidal, 'n' if not", fontweight = 'bold')
-        ax = fig.add_axes([0.1, 0.2, 0.8, 0.6])
-
-        # Plot for Ellipsodial
-        ax.set_title('Periodogram', fontsize=13)
-        ax.set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
-        ax.set_ylabel('Power', fontsize=10)
-        ax.plot(periodogram.period, periodogram.power, color = '#98A391', lw = 1)
-        ax.axvline(x = best_period, color = "#000000", ls = (0, (4,5)), lw = 2, label = fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 3)}$ days') 
-        ax.set_xscale('log') 
-        ax.legend(loc = 'upper left')
+        ax3.plot(sine_binned_lightcurve.phase.value, sine_binned_lightcurve.flux.value, color = '#000000', lw = 2, label = 'Folded Sine Wave')
+        ax3.legend()
 
     elif effect == 'Flares':
         plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight = 'bold')
@@ -410,21 +399,42 @@ def effects_selection_plot(effect, lightcurve, periodogram, best_period, binned_
         ax1.set_title('Lightcurve', fontsize=13)
         ax1.set_xlabel('Time (days)', fontsize = 10)
         ax1.set_ylabel('Normalized Flux', fontsize = 10)
-        ax1.scatter(lightcurve.time.value, lightcurve.flux.value, color = '#98A391', s = 4)
-        ax1.plot(time, sine_fit, color= '#000000', lw = 2, label = 'Fitted Sine Wave')
-        ax1.set_xlim(min(time) + 1, min(time) + 5)
+        ax1.scatter(lightcurve.time.value, lightcurve.flux.value, color = '#98A391', s = 2)
+        ax1.plot(time, sine_fit, color= '#000000', lw = 1.5, label = 'Fitted Sine Wave')
         ax1.legend()
 
         # Plot residuals
         ax2.set_title('Flux - Fitted Sine Wave', fontsize=13)
         ax2.set_xlabel('Time (days)', fontsize = 10)
         ax2.set_ylabel('Normalized Flux', fontsize = 10)
-        # ax2.scatter(time, residuals, color= '#4E6142', s = 2) 
         ax2.plot(time, residuals, color= '#98A391', lw = 1)
-        ax2.set_xlim(min(time) + 1, min(time) + 5)
+
+    elif effect == 'Doppler beaming':
+        plt.suptitle("Press 'y' if there is doppler beaming, 'n' if not", fontweight = 'bold')
+        ax = fig.add_axes([0.1, 0.2, 0.8, 0.6])
+
+        # Bin lightcurve
+        phase_lightcurve = lightcurve.fold(period = 2*best_period) # CHECK ME MISS GIRL
+        bin_value = find_bin_value(phase_lightcurve, 100)
+        binned_lightcurve = phase_lightcurve.bin(bin_value*u.min)
+
+        # Bin sine wave
+        sine_lightcurve = LightCurve(time = time, flux = sine_fit) # CHECK ME MISS GIRL
+        sine_phase_lightcurve = sine_lightcurve.fold(period = 2*best_period)
+        sine_binned_lightcurve = sine_phase_lightcurve.bin(bin_value*u.min)
+
+        # Plot the binned lightcurve
+        ax.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
+        ax.set_xlabel('Phase', fontsize = 10)
+        ax.set_ylabel('Normalized Flux', fontsize = 10)
+        ax.vlines(binned_lightcurve.phase.value, 
+                        binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#98A391', lw=2)
+        ax.plot(sine_binned_lightcurve.phase.value, sine_binned_lightcurve.flux.value, color = '#000000', lw = 2, label = 'Folded Sine Wave')
+        ax.legend()
 
     else: 
-        print("Invalid effect, must be 'Transits', 'Ellipsoidal', 'Radiation', or 'Doppler beaming'")
+        print("Invalid effect, must be 'Eclipsing', 'Flares', or 'Doppler beaming'")
 
 
 """
@@ -460,25 +470,11 @@ def on_key(event, purpose):
                 print('Period is not real, loading next plot ... \n')
             plt.close()
 
-    elif purpose == 'Transits':
+    elif purpose == 'Eclipsing':
         if event.key not in y_n_keys:
             print("Invalid key input, select 'y' or 'n'")
         else:
-            transits_bool_list.append(event.key == 'y') 
-            plt.close()
-
-    elif purpose == 'Ellipsoidal':
-        if event.key not in y_n_keys:
-            print("Invalid key input, select 'y' or 'n'")
-        else:
-            ellipsoidal_bool_list.append(event.key == 'y')
-            plt.close()
-
-    elif purpose == 'Radiation':
-        if event.key not in y_n_keys:
-            print("Invalid key input, select 'y' or 'n'")
-        else:
-            radiation_bool_list.append(event.key == 'y')
+            eclipsing_bool_list.append(event.key == 'y') 
             plt.close()
 
     elif purpose == 'Doppler beaming':
