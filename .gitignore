@@ -3,6 +3,5 @@
 .env.local
 __pycache__
 wdss_data.csv
-cnn
 periods.csv
 autopilot.py
