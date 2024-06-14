@@ -13,7 +13,7 @@ from period_finding import *
 
 def main():
     # Choose how to run
-    preload = True # if you want to preload all plots before selecting periods
+    preload = False # if you want to preload all plots before selecting periods
     autopilot = False # have the computer do all the work for you 
 
     # Cadence wanting to use
