@@ -62,9 +62,8 @@ def main():
                                                     minimum_period = (2*cadence*u.second).to(u.day).value, 
                                                     maximum_period = 14)
             
-            # Choose the best period candidate
-            best_period = select_period_plots(lightcurve, periodogram, literature_period, star_name, star_imag)
-            if not best_period: continue
+            # Get period at max power
+            best_period = periodogram.period_at_max_power.value
 
             # Make period plot
             sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)

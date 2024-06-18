@@ -275,7 +275,7 @@ def period_selection_plots(lightcurve, periodogram, best_period, literature_peri
     axs[0, 0].legend(loc = 'upper left')
 
     # Plot binned lightcurve
-    axs[1, 0].set_title(r'Lightcurve Folded on $P_{\text{orb, best}}$', fontsize=12)
+    axs[1, 0].set_title(r'Lightcurve Folded on $P_{\text{orb, max power}}$', fontsize=12)
     axs[1, 0].set_xlabel('Phase', fontsize = 10)
     axs[1, 0].set_ylabel('Normalized Flux', fontsize = 10)
     axs[1, 0].vlines(binned_lightcurve.phase.value, 
@@ -335,7 +335,7 @@ def effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fi
     sns.set_theme(rc={'axes.facecolor':'#F4F6F3'})
     fig = plt.figure(figsize=(14, 8))
     cid = fig.canvas.mpl_connect('key_press_event', lambda event: on_key(event, effect))
-    fig.text(0.5, 0.928, fr'$P_{{\text{{orb, best}}}}={np.round(best_period, 4)}$ days' , ha='center', fontsize=12)
+    fig.text(0.5, 0.928, fr'$P_{{\text{{orb, max power}}}}={np.round(best_period, 4)}$ days' , ha='center', fontsize=12)
     fig.text(0.5, 0.02, fr'{star_name},  $i_{{\text{{mag}}}}={star_imag}$', ha='center', fontsize=16)
 
     if effect == 'Eclipsing':
@@ -377,7 +377,7 @@ def effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fi
         ax2.legend(loc = 'upper left')
 
         # Plot the binned lightcurve
-        ax3.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
+        ax3.set_title(r'Folded on $P_{\text{orb, max power}}$', fontsize=13)
         ax3.set_xlabel('Phase', fontsize = 10)
         ax3.set_ylabel('Normalized Flux', fontsize = 10)
         ax3.vlines(binned_lightcurve.phase.value, 
@@ -424,7 +424,7 @@ def effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fi
         sine_binned_lightcurve = sine_phase_lightcurve.bin(bin_value*u.min)
 
         # Plot the binned lightcurve
-        ax.set_title(r'Folded on $P_{\text{orb, best}}$', fontsize=13)
+        ax.set_title(r'Folded on $P_{\text{orb, max power}}$', fontsize=13)
         ax.set_xlabel('Phase', fontsize = 10)
         ax.set_ylabel('Normalized Flux', fontsize = 10)
         ax.vlines(binned_lightcurve.phase.value, 
