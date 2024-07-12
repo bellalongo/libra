@@ -58,23 +58,29 @@ class LightcurveData(object):
                         imag: current catalog row's imag
                         literature_period: current catalog row's literature period (0 if none)
         """
+        # Initialize a variable for catching errors
+        error = False
+
         # Pull data for that star
         try:
             result = lk.search_lightcurve(self.catalog_row['iau_name'], mission = 'TESS')
             result_exposures = result.exptime
         except Exception as e:
             print(f"Error for {self.catalog_row['iau_name']}: {e} \n")
-            return None
+            error = True
 
         lightcurve = self.append_lightcurves(result, result_exposures)
-        if not lightcurve: return None # check if there was a result with the cadence needed
+        if not lightcurve: error = True # check if there was a result with the cadence needed
 
         # Star data
         name = 'TIC ' + str(lightcurve.meta['TICID'])
         imag = self.catalog_row['i']
         literature_period = (self.catalog_row['porb']*u.hour).to(u.day).value
 
-        return lightcurve, name, imag, literature_period
+        if not error:
+            return lightcurve, name, imag, literature_period
+        else:
+            return (None, None, None, None)
 
 
     def append_lightcurves(self, result, result_exposures):

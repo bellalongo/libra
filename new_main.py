@@ -1,6 +1,7 @@
 from input_check import *
 from catalog_data import *
 from lightcurve_data import *
+from orb_calculator import *
 
 def new_main():
 
@@ -29,7 +30,10 @@ def new_main():
 
         if not lightcurve_data.lightcurve: continue
 
+        print(lightcurve_data.periodogram)
+
         # Present lightcurve plots
+        OrbCalculator(lightcurve_data)
 
 
 
