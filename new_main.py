@@ -1,5 +1,6 @@
 from input_check import *
 from catalog_data import *
+from lightcurve_data import *
 
 def new_main():
 
@@ -21,7 +22,20 @@ def new_main():
     # Process catalog data
     catalog = CatalogData(raw_catalog_dir, catalog_dir, porb_dir)
 
-    # Make 
+    # Iterate through each row in the catalog
+    for _, row in catalog.catalog_df.iterrows():
+        # Get lightcurve data
+        lightcurve_data = LightcurveData(row, cadence)
+
+        if not lightcurve_data.lightcurve: continue
+
+        # Present lightcurve plots
+
+
+
+
+
+
 
 if __name__ == '__main__':
     new_main()

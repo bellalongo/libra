@@ -36,7 +36,7 @@ def main():
 
     # Check for preload
     if preload:
-        # preload_plots(df, cadence)
+        preload_plots(df, cadence)
         load_plots()
     else:
         # Iterate through all rows with an orbital period
