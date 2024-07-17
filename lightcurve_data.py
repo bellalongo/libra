@@ -8,7 +8,7 @@ class LightcurveData(object):
         self.cadence = cadence
 
         # Get lightcurve data
-        self.lightcurve, self.name, self.imag, self.literature_period = self.get_lightcurve()
+        self.lightcurve, self.name, self.imag, self.lit_period = self.get_lightcurve()
 
         # Get periodogram
         self.periodogram = self.get_periodogram()

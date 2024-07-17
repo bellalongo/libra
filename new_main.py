@@ -2,6 +2,7 @@ from input_check import *
 from catalog_data import *
 from lightcurve_data import *
 from orb_calculator import *
+from exoplanet_effects import *
 
 def new_main():
 
@@ -30,15 +31,17 @@ def new_main():
 
         if not lightcurve_data.lightcurve: continue
 
-        print(lightcurve_data.periodogram)
+        # Present period plots
+        orb_calculator = OrbCalculator(lightcurve_data)
 
-        # Present lightcurve plots
-        OrbCalculator(lightcurve_data)
+        # Check if the period was real
+        if not orb_calculator.is_real_period: continue
 
+        # Present effects plots -> take in orb calculator as an object
+        exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator)
 
-
-
-
+        # Save the data
+        exoplanet_effects.save_to_csv()
 
 
 if __name__ == '__main__':
