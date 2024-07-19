@@ -5,7 +5,7 @@ __pycache__
 wdss_data.csv
 periods.csv
 autopilot.py
-preload/all_star_data.csv
+preload/stars_periods.csv
 preload/.DS_Store
 preload/doppler_plots/.DS_Store
 preload/eclipsing_plots/.DS_Store
