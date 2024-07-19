@@ -6,3 +6,8 @@ wdss_data.csv
 periods.csv
 autopilot.py
 preload/all_star_data.csv
+preload/.DS_Store
+preload/doppler_plots/.DS_Store
+preload/eclipsing_plots/.DS_Store
+preload/flare_plots/.DS_Store
+preload/period_plots/.DS_Store
