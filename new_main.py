@@ -1,6 +1,5 @@
 from input_check import *
 from catalog_data import *
-from preload_plots import *
 from lightcurve_data import *
 from orb_calculator import *
 from exoplanet_effects import *
@@ -26,10 +25,6 @@ def new_main():
     # Process catalog data
     catalog_data = CatalogData(raw_catalog_dir, catalog_dir, porb_dir)
 
-    # Create an instance of preloading if a preload is wanted
-    if preload:
-        preload_plots = PreloadPlots(preload)
-
     # Iterate through each row in the catalog
     for _, row in catalog_data.catalog_df.iterrows():
         # Get lightcurve data
@@ -38,10 +33,10 @@ def new_main():
         if not lightcurve_data.lightcurve: continue
 
         # Present period plots
-        orb_calculator = OrbCalculator(lightcurve_data, preload_plots)
+        orb_calculator = OrbCalculator(lightcurve_data)
 
         # Check if the period was real
-        if not orb_calculator.is_real_period and not preload: continue
+        if not orb_calculator.is_real_period: continue
 
         # Present effects plots -> take in orb calculator as an object
         exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator)

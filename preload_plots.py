@@ -6,12 +6,15 @@ class PreloadPlots(object):
     def __init__(self, preload):
         self.preload = preload
 
-        # Directories
+        # Plot directories
         self.preload_dir = 'preload/'
         self.doppler_dir = self.preload_dir + 'doppler_plots/'
         self.eclipsing_dir = self.preload_dir + 'eclipsing_plots/' 
         self.flare_dir = self.preload_dir + 'flare_plots/'     
         self.period_dir = self.preload_dir + 'period_plots/' 
+
+        # Preload data directories
+        self.data_dir = 'stars_periods.csv'
 
 
     def create_dir(self, plot_type, tic):
@@ -50,4 +53,3 @@ class PreloadPlots(object):
             plt.close()
         else:
             print(f'{plot_type} plot already exists for {tic}')
-        
