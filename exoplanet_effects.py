@@ -27,10 +27,15 @@ class ExoplanetEffects(object):
 
     def irradiation_ellipsodial_check(self):
         """
-
+            Checks if the lightcurve shows irradiation or ellipsodial effects 
+            Name:       irradiation_ellipsodial_check()
+            Parameters:
+                        None
+            Returns:
+                        None
         """
         # Irradiation of literature period = period at max power
-        if math.isclose(np.abs(self.lightcurve_data.lit_period - self.lightcurve_data.period_at_max_powwer), 0, rel_tol=1e-2):
+        if math.isclose(np.abs(self.lightcurve_data.lit_period - self.lightcurve_data.period_at_max_power), 0, rel_tol=1e-2):
             self.effects_found.append(True)
         else:
             self.effects_found.append(False)
@@ -44,7 +49,12 @@ class ExoplanetEffects(object):
 
     def eclipsing_plot(self, fig):
         """
-
+            Presents a plot of the lightcurve with sine fit, periodogram, and binned lightcurve to be used to see if eclisping 
+            Name:       eclipsing_plot()
+            Parameters:
+                        fig: current plot figure 
+            Returns:
+                        None
         """
         # Plot title and axis
         plt.suptitle("Press 'y' if there are eclipses, 'n' if not", fontweight = 'bold')
@@ -68,7 +78,12 @@ class ExoplanetEffects(object):
 
     def doppler_beaming_plot(self, fig):
         """
-
+            Presents a plot of the binned lightcurve, but with two folds instead of one to see if there is doppler beaming
+            Name:       doppler_beaming_plots()
+            Parameters:
+                        fig: current plot figure 
+            Returns:
+                        None
         """
         # Plot title and axis
         plt.suptitle("Press 'y' if there is doppler beaming, 'n' if not", fontweight = 'bold')
@@ -95,7 +110,12 @@ class ExoplanetEffects(object):
 
     def flares_plot(self, fig):
         """
-
+            Presents a plot of the lightcurve and residuals to see if there are flares
+            Name:       eclipsing_plot()
+            Parameters:
+                        fig: current plot figure 
+            Returns:
+                        None
         """
         # Plot title and axis 
         plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight = 'bold')
@@ -115,7 +135,12 @@ class ExoplanetEffects(object):
     
     def effects_plots(self, effect):
         """
-
+            Presents an effects plot depending on the given effect
+            Name:       eclipsing_plot()
+            Parameters:
+                        effect: lightcurve effect
+            Returns:
+                        None
         """
         # Plot basics
         sns.set_style("darkgrid")
@@ -155,9 +180,3 @@ class ExoplanetEffects(object):
         else:
             self.effects_found.append(event.key == 'y') 
             plt.close()
-
-
-    def save_to_csv():
-        """
-            
-        """

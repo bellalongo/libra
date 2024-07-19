@@ -1,8 +1,10 @@
 from input_check import *
 from catalog_data import *
+from preload_plots import *
 from lightcurve_data import *
 from orb_calculator import *
 from exoplanet_effects import *
+from save_data import *
 
 def new_main():
 
@@ -22,26 +24,30 @@ def new_main():
     InputCheck(raw_catalog_dir, catalog_dir, porb_dir, preload, autopilot)
 
     # Process catalog data
-    catalog = CatalogData(raw_catalog_dir, catalog_dir, porb_dir)
+    catalog_data = CatalogData(raw_catalog_dir, catalog_dir, porb_dir)
+
+    # Create an instance of preloading if a preload is wanted
+    if preload:
+        preload_plots = PreloadPlots(preload)
 
     # Iterate through each row in the catalog
-    for _, row in catalog.catalog_df.iterrows():
+    for _, row in catalog_data.catalog_df.iterrows():
         # Get lightcurve data
         lightcurve_data = LightcurveData(row, cadence)
 
         if not lightcurve_data.lightcurve: continue
 
         # Present period plots
-        orb_calculator = OrbCalculator(lightcurve_data)
+        orb_calculator = OrbCalculator(lightcurve_data, preload_plots)
 
         # Check if the period was real
-        if not orb_calculator.is_real_period: continue
+        if not orb_calculator.is_real_period and not preload: continue
 
         # Present effects plots -> take in orb calculator as an object
         exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator)
 
         # Save the data
-        exoplanet_effects.save_to_csv()
+        SaveData(catalog_data, lightcurve_data, exoplanet_effects)
 
 
 if __name__ == '__main__':
