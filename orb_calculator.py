@@ -7,8 +7,9 @@ import seaborn as sns
 
 
 class OrbCalculator(object):
-    def __init__(self, lightcurve_data):
+    def __init__(self, lightcurve_data, preload_plots):
         self.lightcurve_data = lightcurve_data
+        self.preload = preload_plots
 
         # Initialize a boolean to determine if the period is real
         self.is_real_period = False
@@ -38,7 +39,12 @@ class OrbCalculator(object):
 
         # Create plots for determing if the period is real
         self.is_real_period_plot()
-        plt.show()
+
+        # Either save or show plot depending on preload
+        if preload_plots.preload:
+            preload_plots.save_plot('Period', lightcurve_data.name)
+        else:
+            plt.show()
 
 
     def plausible_period(self):

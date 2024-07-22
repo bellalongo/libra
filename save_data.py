@@ -2,7 +2,7 @@ import csv
 
 
 class SaveData(object):
-    def __init__(self, catalog_data, lightcurve_data, exoplanet_effects):
+    def __init__(self, catalog_data, lightcurve_data, exoplanet_effects, preload_plots):
         self.catalog_data = catalog_data
         self.lightcurve_data = lightcurve_data
         self.exoplanet_effects = exoplanet_effects
@@ -14,14 +14,14 @@ class SaveData(object):
     def create_row(self):
         """
             Creates a row of the current lightcurve's date to be added to the porb_dir
-            Name:       eclipsing_plot()
+            Name:       create_row()
             Parameters:
                         None
             Returns:
                         None
         """
         row = {
-            'Star': self.lightcurve_data.name,
+            'TIC': self.lightcurve_data.name,
             'Orbital period (days)': self.lightcurve_data.period_at_max_power,
             'Literature period (days)': self.lightcurve_data.lit_period, 
             'i Magnitude': self.lightcurve_data.imag,
@@ -38,7 +38,7 @@ class SaveData(object):
     def add_to_csv(self):
         """
             Adds the lightcurve's row to the porb_dir
-            Name:       eclipsing_plot()
+            Name:       add_to_csv()
             Parameters:
                         None
             Returns:
@@ -58,7 +58,7 @@ class SaveData(object):
         # Open file in append mode
         with open(self.catalog_data.porb_dir, 'a', newline='') as csvfile:
             fieldnames = [
-                'Star', 
+                'TIC', 
                 'Orbital period (days)', 
                 'Literature period (days)', 
                 'i Magnitude', 'Eclipsing', 

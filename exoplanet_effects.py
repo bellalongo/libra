@@ -6,9 +6,10 @@ import seaborn as sns
 
 
 class ExoplanetEffects(object):
-    def __init__(self, lightcurve_data, orb_calculator):
+    def __init__(self, lightcurve_data, orb_calculator, preload_plots):
         self.lightcurve_data = lightcurve_data
         self.orb_calculator = orb_calculator
+        self.preload_plots = preload_plots
 
         # List of the possible effects to be found 
         self.effects = ['Eclipsing', 'Doppler beaming', 'Flares']
@@ -19,7 +20,12 @@ class ExoplanetEffects(object):
         # Iterate through all effects
         for effect in self.effects:
             self.effects_plots(effect)
-            plt.show()
+
+            # Either save or show plot depending on preload
+            if preload_plots.preload:
+                preload_plots.save_plot(effect, lightcurve_data.name)
+            else:
+                plt.show()
         
         # Check for irradiation and ellispodial
         self.irradiation_ellipsodial_check()
