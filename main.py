@@ -19,7 +19,7 @@ def main():
     cadence = 120 # Desired cadence for lightcurves
 
     # Choose how to run
-    preload = True # True if want to save all plots now, and look through them later
+    preload = False # True if want to save all plots now, and look through them later
     autopilot = False # True if want to just use a CNN to find periods
 
     # Check inputs
@@ -31,28 +31,28 @@ def main():
     # Initiate an instance of preload
     preload_plots = PreloadPlots(preload, porb_dir)
 
-    # # Iterate through each row in the catalog
-    # for _, row in tqdm(catalog_data.catalog_df.iterrows(), 'Processing lightcurves', total = len(catalog_data.catalog_df)):
+    # Iterate through each row in the catalog
+    for _, row in tqdm(catalog_data.catalog_df.iterrows(), 'Processing lightcurves', total = len(catalog_data.catalog_df)):
         
-    #     # Get lightcurve data
-    #     lightcurve_data = LightcurveData(row, cadence)
+        # Get lightcurve data
+        lightcurve_data = LightcurveData(row, cadence)
 
-    #     if not lightcurve_data.lightcurve: continue
+        if not lightcurve_data.lightcurve: continue
 
-    #     # Present period plots
-    #     orb_calculator = OrbCalculator(lightcurve_data, preload_plots)
+        # Present period plots
+        orb_calculator = OrbCalculator(lightcurve_data, preload_plots)
 
-    #     # Check if the period was real
-    #     if not orb_calculator.is_real_period and not preload: continue
+        # Check if the period was real
+        if not orb_calculator.is_real_period and not preload: continue
 
-    #     # Present effects plots -> take in orb calculator as an object
-    #     exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator, preload_plots)
+        # Present effects plots -> take in orb calculator as an object
+        exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator, preload_plots)
 
-    #     # Save the data
-    #     if preload:
-    #         preload_plots.save_period(lightcurve_data)
-    #     else:
-    #         SaveData(catalog_data, lightcurve_data, exoplanet_effects)
+        # Save the data
+        if preload:
+            preload_plots.save_period(lightcurve_data)
+        else:
+            SaveData(catalog_data, lightcurve_data, exoplanet_effects)
 
     # Load plots if preload
     preload_plots.run()
