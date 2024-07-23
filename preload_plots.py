@@ -51,12 +51,7 @@ class PreloadPlots(object):
 
     def create_row(self, row):
         """
-            Creates a row of the current lightcurve's date to be added to the porb_dir
-            Name:       eclipsing_plot()
-            Parameters:
-                        row: current lightcurve's row in the preload_df
-            Returns:
-                        None
+            
         """
         row = {
             'TIC': row['TIC'].values[0],
@@ -75,7 +70,7 @@ class PreloadPlots(object):
 
     def save_plot(self, plot_type, tic):
         """
-
+            
         """
         # Get plot directory
         plot_dir = self.create_dir(plot_type, tic)
@@ -92,19 +87,15 @@ class PreloadPlots(object):
         """
 
         """
-        # Doppler plot directory
         if plot_type == 'Doppler beaming':
             plot_dir = self.doppler_dir + tic + '_doppler.png'
 
-        # Eclipsing plot directory
         elif plot_type == 'Eclipsing':
             plot_dir = self.eclipsing_dir + tic + '_eclipsing.png'
 
-        # Flare plot directory
         elif plot_type == 'Flares':
             plot_dir = self.flare_dir + tic + '_flares.png'
 
-        # Period directory
         elif plot_type == 'Period':
             plot_dir = self.period_dir + tic + '_period.png'
 
@@ -113,15 +104,10 @@ class PreloadPlots(object):
 
     def save_period(self, lightcurve_data):
         """
-
+            
         """
         # See if file already exists
-        try:
-            with open(self.preload_data_dir, 'r') as csvfile:
-                pass
-            file_exists = True
-        except FileNotFoundError:
-            file_exists = False
+        file_exists = exists(self.preload_data_dir)
 
         # Create the row
         row = self.create_preload_row(lightcurve_data)
@@ -132,14 +118,14 @@ class PreloadPlots(object):
                 'TIC', 
                 'Orbital period (days)', 
                 'Literature period (days)', 
-                'i Magnitude', 'Eclipsing', 
+                'i Magnitude', 
+                'Eclipsing', 
                 'Doppler beaming', 
                 'Flares', 
                 'Irradiation', 
                 'Ellipsoidal'
             ]
-            
-            writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             # Write header if file doesn't exist
             if not file_exists:
@@ -151,20 +137,10 @@ class PreloadPlots(object):
 
     def add_to_csv(self, row):
         """
-            Adds the lightcurve's row to the porb_dir
-            Name:       eclipsing_plot()
-            Parameters:
-                        None
-            Returns:
-                        None
+            
         """
         # See if file already exists
-        try:
-            with open(self.porb_dir, 'r') as csvfile:
-                pass
-            file_exists = True
-        except FileNotFoundError:
-            file_exists = False
+        file_exists = exists(self.porb_dir)
 
         # Create the row
         row = self.create_row(row)
@@ -175,14 +151,14 @@ class PreloadPlots(object):
                 'TIC', 
                 'Orbital period (days)', 
                 'Literature period (days)', 
-                'i Magnitude', 'Eclipsing', 
+                'i Magnitude', 
+                'Eclipsing', 
                 'Doppler beaming', 
                 'Flares', 
                 'Irradiation', 
                 'Ellipsoidal'
             ]
-            
-            writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             # Write header if file doesn't exist
             if not file_exists:
@@ -194,7 +170,7 @@ class PreloadPlots(object):
 
     def get_tics(self):
         """
-
+            
         """
         # Get star name for every period plot
         plots = [plot for plot in os.listdir('preload/period_plots') if plot.startswith('TIC')]
@@ -205,7 +181,7 @@ class PreloadPlots(object):
 
     def period_plot(self, tic):
         """
-
+            
         """
         # Get the plot directory
         period_plot = self.create_dir('Period', tic)
@@ -222,9 +198,8 @@ class PreloadPlots(object):
 
     def effects_plots(self, tic):
         """
-
+            
         """
-        # Iterate through each effect
         for effect in self.effects:
             # Get the plot directory
             plot_dir = self.create_dir(effect, tic)
@@ -240,86 +215,76 @@ class PreloadPlots(object):
 
     def irradiation_ellipsodial_check(self, row):
         """
-            Checks if the lightcurve shows irradiation or ellipsodial effects 
-            Name:       irradiation_ellipsodial_check()
-            Parameters:
-                        row: current tic's row in the df
-            Returns:
-                        None
+            
         """
-        # Irradiation of literature period = period at max power
+        # Irradiation if literature period = period at max power
         if math.isclose(np.abs(row['Literature period (days)'].values[0] - row['Orbital period (days)'].values[0]), 0, rel_tol=1e-2):
             self.effects_found.append(True)
         else:
             self.effects_found.append(False)
 
-        # Eclipsing if the literature period is twice the period at max power -> check me
+        # Ellipsoidal if literature period is twice the period at max power
         if math.isclose(np.abs(row['Literature period (days)'].values[0] - row['Orbital period (days)'].values[0]), 2, rel_tol=1e-2):
             self.effects_found(True)
         else:
             self.effects_found.append(False)
 
-
+    
     def run(self):
         """
-
+            
         """
-        # Get all of the tics in the directory
-        tics = self.get_tics()
+        # Check preload
+        if self.preload:
+            
+            # Get all of the tics in the directory
+            tics = self.get_tics()
 
-        # Load the saved star data
-        preload_df = pd.read_csv(self.preload_data_dir)
+            # Load the saved star data
+            preload_df = pd.read_csv(self.preload_data_dir)
 
-        # Check if orbital period csv exists
-        porb_filename = 'orbital_periods/periods.csv'
-        if exists(porb_filename):
-            os.remove(porb_filename)
+            # Check if orbital period csv exists
+            porb_filename = 'orbital_periods/periods.csv'
+            if exists(porb_filename):
+                os.remove(porb_filename)
 
-        # Iterate through every star
-        for tic in tics:
-            # Load the period plot
-            self.period_plot(tic)
+            # Iterate through every star
+            for tic in tics:
+                # Load the period plot
+                self.period_plot(tic)
 
-            # Check if the period is real
-            if not self.is_real_period: continue
+                # Check if the period is real
+                if not self.is_real_period:
+                    continue
 
-            # Load effects plots
-            self.effects_found = []
-            self.effects_plots(tic)
+                # Load effects plots
+                self.effects_found = []
+                self.effects_plots(tic)
 
-            # Get the current row of the df
-            row = preload_df.loc[preload_df['TIC'] == tic]
+                # Get the current row of the df
+                row = preload_df.loc[preload_df['TIC'] == tic]
 
-            # Check for irradiatin and ellipsodial
-            self.irradiation_ellipsodial_check(row)
+                # Check for irradiation and ellipsoidal
+                self.irradiation_ellipsodial_check(row)
 
-            # Save the data
-            self.add_to_csv(row)
+                # Save the data
+                self.add_to_csv(row)
 
 
     def on_key(self, event, purpose):
         """
-            Event function that determines if a key was clicked
-            Name:       on_key()
-            Parameters: 
-                        event: key press event
-                        purpose: either 'Period selection' or 'Effects selection'
-            Returns:
-                        None
+            
         """
         y_n_keys = {'y', 'n'}
 
         if event.key not in y_n_keys:
             print("Invalid key input, select 'y' or 'n'")
-
         else:
             if purpose == 'Period selection':
-
                 if event.key == 'n':
                     print('Period is not real, loading next plot ... \n')
                 else:
                     self.is_real_period = True
-
             elif purpose == 'Effects selection':
                 self.effects_found.append(event.key == 'y') 
 

@@ -2,7 +2,7 @@ import csv
 
 
 class SaveData(object):
-    def __init__(self, catalog_data, lightcurve_data, exoplanet_effects, preload_plots):
+    def __init__(self, catalog_data, lightcurve_data, exoplanet_effects):
         self.catalog_data = catalog_data
         self.lightcurve_data = lightcurve_data
         self.exoplanet_effects = exoplanet_effects

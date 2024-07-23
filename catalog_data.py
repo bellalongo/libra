@@ -13,27 +13,10 @@ class CatalogData(object):
         # Preprocess files
         self.preprocess()
 
-        # Create catalofg dataframes
+        # Create catalog dataframes
         self.catalog_df = self.create_dataframe()
 
-    
-    def preprocess(self):
-        """
-            Replaces the spaces in the raw data with commas and removes porb_dir if it already exists
-            Parameters: 
-                        None
-            Returns:
-                        None
-        """
-        # Check if query has already been commaized
-        if not exists(self.catalog_dir):
-            self.commaize()
-        
-        # Check if orbital period directory already exists
-        if exists(self.porb_dir):
-            os.remove(self.porb_dir)
 
-    
     def commaize(self):
         """
             Replaces the spaces in the raw data with commas
@@ -52,12 +35,29 @@ class CatalogData(object):
                 
                 # Iterate through each row
                 for row in reader:
-                    # Replace spaces for commas for each element
+                    # Replace spaces with commas for each element
                     modified_row = [column.replace(' ', ',') for column in row]
                     
                     writer.writerow(modified_row)
 
-    
+
+    def preprocess(self):
+        """
+            Replaces the spaces in the raw data with commas and removes porb_dir if it already exists
+            Parameters: 
+                        None
+            Returns:
+                        None
+        """
+        # Check if query has already been commaized
+        if not exists(self.catalog_dir):
+            self.commaize()
+        
+        # Check if orbital period directory already exists
+        if exists(self.porb_dir):
+            os.remove(self.porb_dir)
+
+
     def create_dataframe(self):
         """
             Creates a pandas dataframe to store the catalog data

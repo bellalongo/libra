@@ -27,14 +27,13 @@ class ExoplanetEffects(object):
             else:
                 plt.show()
         
-        # Check for irradiation and ellispodial
+        # Check for irradiation and ellipsodial
         self.irradiation_ellipsodial_check()
 
 
     def irradiation_ellipsodial_check(self):
         """
             Checks if the lightcurve shows irradiation or ellipsodial effects 
-            Name:       irradiation_ellipsodial_check()
             Parameters:
                         None
             Returns:
@@ -46,24 +45,23 @@ class ExoplanetEffects(object):
         else:
             self.effects_found.append(False)
 
-        # Eclipsing if the literature period is twice the period at max power -> check me
+        # Eclipsing if the literature period is twice the period at max power
         if math.isclose(np.abs(self.lightcurve_data.lit_period - self.lightcurve_data.period_at_max_power), 2, rel_tol=1e-2):
             self.effects_found(True)
         else:
             self.effects_found.append(False)
-             
+
 
     def eclipsing_plot(self, fig):
         """
             Presents a plot of the lightcurve with sine fit, periodogram, and binned lightcurve to be used to see if eclisping 
-            Name:       eclipsing_plot()
             Parameters:
                         fig: current plot figure 
             Returns:
                         None
         """
         # Plot title and axis
-        plt.suptitle("Press 'y' if there are eclipses, 'n' if not", fontweight = 'bold')
+        plt.suptitle("Press 'y' if there are eclipses, 'n' if not", fontweight='bold')
 
         # Plots for Eclipsing
         gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1]) 
@@ -85,30 +83,29 @@ class ExoplanetEffects(object):
     def doppler_beaming_plot(self, fig):
         """
             Presents a plot of the binned lightcurve, but with two folds instead of one to see if there is doppler beaming
-            Name:       doppler_beaming_plots()
             Parameters:
                         fig: current plot figure 
             Returns:
                         None
         """
         # Plot title and axis
-        plt.suptitle("Press 'y' if there is doppler beaming, 'n' if not", fontweight = 'bold')
+        plt.suptitle("Press 'y' if there is doppler beaming, 'n' if not", fontweight='bold')
         ax = fig.add_axes([0.1, 0.2, 0.8, 0.6])
 
         # Bin the lightcurve, but with 2 folds
-        binned_lightcurve = self.orb_calculator.fold_lightcurve(num_folds = 2)
+        binned_lightcurve = self.orb_calculator.fold_lightcurve(num_folds=2)
 
         # Bin the sine wave, but with 2 folds
         binned_sine, _ = self.orb_calculator.fold_sine_wave(self.orb_calculator.time, self.orb_calculator.sine_fit.params['frequency'].value, 
-                                           self.orb_calculator.sine_fit.best_fit, num_folds = 2)
+                                           self.orb_calculator.sine_fit.best_fit, num_folds=2)
         
         # Plot the binned lightcurve
         ax.vlines(binned_lightcurve.phase.value, 
-                        binned_lightcurve.flux - binned_lightcurve.flux_err, 
-                        binned_lightcurve.flux + binned_lightcurve.flux_err, color = '#9AADD0', lw = 2)
+                  binned_lightcurve.flux - binned_lightcurve.flux_err, 
+                  binned_lightcurve.flux + binned_lightcurve.flux_err, color='#9AADD0', lw=2)
         
         # Plot the binned sine wave
-        ax.plot(binned_sine.phase.value, binned_sine.flux.value, color = '#101935', label = 'Folded Sine Wave')
+        ax.plot(binned_sine.phase.value, binned_sine.flux.value, color='#101935', label='Folded Sine Wave')
 
         # Add legend 
         ax.legend()
@@ -117,14 +114,13 @@ class ExoplanetEffects(object):
     def flares_plot(self, fig):
         """
             Presents a plot of the lightcurve and residuals to see if there are flares
-            Name:       eclipsing_plot()
             Parameters:
                         fig: current plot figure 
             Returns:
                         None
         """
         # Plot title and axis 
-        plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight = 'bold')
+        plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight='bold')
 
         # Plots for Flares
         gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
@@ -138,11 +134,10 @@ class ExoplanetEffects(object):
         # Plot the residuals
         self.orb_calculator.plot_residuals(ax2)
 
-    
+
     def effects_plots(self, effect):
         """
             Presents an effects plot depending on the given effect
-            Name:       eclipsing_plot()
             Parameters:
                         effect: lightcurve effect
             Returns:
@@ -169,11 +164,9 @@ class ExoplanetEffects(object):
             self.flares_plot(fig)
 
 
-
     def on_key(self, event):
         """
             Event function that determines if a key was clicked
-            Name:       on_key()
             Parameters: 
                         event: key press event
             Returns:
@@ -182,7 +175,7 @@ class ExoplanetEffects(object):
         y_n_keys = {'y', 'n'}
 
         if event.key not in y_n_keys:
-                print("Invalid key input, select 'y' or 'n'")
+            print("Invalid key input, select 'y' or 'n'")
         else:
             self.effects_found.append(event.key == 'y') 
             plt.close()

@@ -1,102 +1,64 @@
-import astropy.units as u
-import lightkurve as lk
-import math
-import matplotlib.pyplot as plt
-import os
-from os.path import exists
-import pandas as pd
+from tqdm import tqdm
 
-from file_editing import *
-from prerun import *
-from period_finding import *
-
+from input_check import *
+from catalog_data import *
+from preload_plots import *
+from lightcurve_data import *
+from orb_calculator import *
+from exoplanet_effects import *
+from save_data import *
 
 def main():
+    
+    # Catalog data 
+    raw_catalog_dir = 'raw_wdss_data.csv' # Raw query data from https://sdss-wdms.org/ 
+    catalog_dir = 'wdss_data.csv' # Query data w/ commas (file shouldn't exist on first run)
+    porb_dir = 'orbital_periods/periods.csv' # Where final orbital periods will be stored
+
+    # Lightcurve data
+    cadence = 120 # Desired cadence for lightcurves
+
     # Choose how to run
-    preload = False # if you want to preload all plots before selecting periods
-    autopilot = False # have the computer do all the work for you 
+    preload = True # True if want to save all plots now, and look through them later
+    autopilot = False # True if want to just use a CNN to find periods
 
-    # Cadence wanting to use
-    cadence = 120
+    # Check inputs
+    InputCheck(raw_catalog_dir, catalog_dir, porb_dir, preload, autopilot)
 
-    # Filenames
-    csv_filename = 'wdss_data.csv'
-    porb_filename = 'orbital_periods/periods.csv'
+    # Process catalog data
+    catalog_data = CatalogData(raw_catalog_dir, catalog_dir, porb_dir)
 
-    # Check if raw data has been converted
-    if not exists(csv_filename):
-        commaize('raw_wdss_data.csv', csv_filename)
-    # Check if periods were already calculated
-    elif exists(porb_filename):
-        os.remove(porb_filename) # maybe add somehow to pick up where left off
+    # Initiate an instance of preload
+    preload_plots = PreloadPlots(preload, porb_dir)
 
-    # Define SDSS query dataframes
-    df = pd.read_csv(csv_filename)
-    df = df[['iau_name', 'i', 'porb', 'porbe']] 
+    # # Iterate through each row in the catalog
+    # for _, row in tqdm(catalog_data.catalog_df.iterrows(), 'Processing lightcurves', total = len(catalog_data.catalog_df)):
+        
+    #     # Get lightcurve data
+    #     lightcurve_data = LightcurveData(row, cadence)
 
-    # Check for preload
-    if preload:
-        preload_plots(df, cadence)
-        load_plots()
-    else:
-        # Iterate through all rows with an orbital period
-        for _, row in df.iterrows():
-            # Pull data for that star
-            try:
-                result = lk.search_lightcurve(row['iau_name'], mission = 'TESS')
-                result_exposures = result.exptime
-            except Exception as e:
-                print(f"Error for {row['iau_name']}: {e} \n")
-                continue
+    #     if not lightcurve_data.lightcurve: continue
 
-            lightcurve = append_lightcurves(result, result_exposures, cadence)
-            if not lightcurve: continue # check if there was a result with the cadence needed
+    #     # Present period plots
+    #     orb_calculator = OrbCalculator(lightcurve_data, preload_plots)
 
-            # Star data
-            star_name = 'TIC ' + str(lightcurve.meta['TICID'])
-            star_imag = row['i']
-            literature_period = (row['porb']*u.hour).to(u.day).value
-            
-            # Get periodogram
-            periodogram = lightcurve.to_periodogram(oversample_factor = 10, 
-                                                    minimum_period = (2*cadence*u.second).to(u.day).value, 
-                                                    maximum_period = 14)
-            
-            # Get period at max power
-            best_period = periodogram.period_at_max_power.value
+    #     # Check if the period was real
+    #     if not orb_calculator.is_real_period and not preload: continue
 
-            # Make period plot
-            sine_fit, residuals = period_selection_plots(lightcurve, periodogram, best_period, literature_period, star_name, star_imag)
-            plt.show()
-            if not period_bool_list[len(period_bool_list) - 1]: continue
+    #     # Present effects plots -> take in orb calculator as an object
+    #     exoplanet_effects = ExoplanetEffects(lightcurve_data, orb_calculator, preload_plots)
 
-            # Make lightcurve effects plot
-            for effect in lightcurve_effects:
-                effects_selection_plot(effect, lightcurve, periodogram, best_period, sine_fit, residuals, star_name, star_imag)
-                plt.show()
-            
-            # Check for irradidation and ellipsodial
-            irradiation, ellipsodial = False, False
-            if literature_period != 0.0:
-                # Irradiation if literature period = best_period
-                if math.isclose(np.abs(best_period - literature_period), 0, rel_tol=1e-2): # maybe change tolerance
-                    irradiation = True
-                elif math.isclose(np.abs(best_period / literature_period), 0.5, rel_tol=1e-2):
-                    ellipsodial = True
+    #     # Save the data
+    #     if preload:
+    #         preload_plots.save_period(lightcurve_data)
+    #     else:
+    #         SaveData(catalog_data, lightcurve_data, exoplanet_effects)
 
-            # Save data to csv
-            curr_index = len(doppler_beaming_bool_list) - 1
-            row = {'Star' : star_name, 
-                   'Orbital Period(days)' : best_period,
-                   'Literature Period(days)': literature_period,
-                   'i Magnitude': star_imag,
-                   'Eclipsing': eclipsing_bool_list[curr_index],
-                   'Flares': flare_bool_list[curr_index],
-                   'Irradiation': irradiation,
-                   'Doppler beaming': doppler_beaming_bool_list[curr_index],
-                   'Ellipsoidal': ellipsodial} # will only hit this line if the period is real
-            append_to_csv(porb_filename, row)
+    # Load plots if preload
+    preload_plots.run()
 
 
 if __name__ == '__main__':
     main()
+
+    print('All done!')

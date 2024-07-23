@@ -35,9 +35,9 @@ class OrbCalculator(object):
 
         # Calculate plot xmin and xmax
         self.xmin = min(self.time) + 1 + self.lightcurve_data.period_at_max_power
-        self.xmax = min(self.time) + 1 + 4*self.lightcurve_data.period_at_max_power
+        self.xmax = min(self.time) + 1 + 4 * self.lightcurve_data.period_at_max_power
 
-        # Create plots for determing if the period is real
+        # Create plots for determining if the period is real
         self.is_real_period_plot()
 
         # Either save or show plot depending on preload
@@ -56,21 +56,20 @@ class OrbCalculator(object):
             Returns:
                         boolean: True if the period is plausible, False if not real
                         cutoff: 5 sigma line cut off
-
         """
         # Remove NaNs from the periodogram
         nan_mask = ~np.isnan(self.lightcurve_data.periodogram.power)
         periodogram_power = self.lightcurve_data.periodogram.power[nan_mask]
         periodogram_period = self.lightcurve_data.periodogram.period[nan_mask].value
         
-        # Calculate standard deviaition of the periodogram
+        # Calculate standard deviation of the periodogram
         std_dev = np.std(periodogram_power)
 
-        # Check period at max power is greater than 5 sigma 
-        if (abs(self.lightcurve_data.period_at_max_power - np.median(periodogram_period)) > 5 * std_dev):
-            return True, 5*std_dev
+        # Check if period at max power is greater than 5 sigma 
+        if abs(self.lightcurve_data.period_at_max_power - np.median(periodogram_period)) > 5 * std_dev:
+            return True, 5 * std_dev
         else:
-            return False, 5*std_dev
+            return False, 5 * std_dev
 
 
     def sine_wave(self, x, amplitude, frequency, phase):
@@ -99,10 +98,11 @@ class OrbCalculator(object):
         """
         total_points = len(lightcurve.time.value)
         total_duration_mins = ((lightcurve.time.value[total_points - 1] - lightcurve.time.value[0]) * u.day).to(u.minute)
-        bin_value = (total_duration_mins/num_bins).value
+        bin_value = (total_duration_mins / num_bins).value
+
         return bin_value
-         
-    
+
+
     def fit_sine_wave(self, time, flux):
         """
             Fits a sine wave to a lightcurve using the lmfit package
@@ -115,15 +115,15 @@ class OrbCalculator(object):
         """
         # Make an lmfit object and fit it
         model = lmfit.Model(self.sine_wave)
-        params = model.make_params(amplitude = self.lightcurve_data.period_at_max_power , 
-                                frequency = 1/self.lightcurve_data.period_at_max_power, 
-                                phase=0.0)
+        params = model.make_params(amplitude=self.lightcurve_data.period_at_max_power, 
+                                   frequency=1 / self.lightcurve_data.period_at_max_power, 
+                                   phase=0.0)
         result = model.fit(flux, params, x=time)
 
         return result
 
-    
-    def fold_lightcurve(self, num_folds = 1):
+
+    def fold_lightcurve(self, num_folds=1):
         """
             Folds the lightcurve on the period at max power, and bins it into 50 bins
             Name:       fold_lightcurve()
@@ -133,20 +133,20 @@ class OrbCalculator(object):
                         binned_lightcurve: folded and binned lightcurve
         """
         # Fold lightcurve
-        folded_lightcurve = self.lightcurve_data.lightcurve.fold(period = num_folds * self.lightcurve_data.period_at_max_power)
+        folded_lightcurve = self.lightcurve_data.lightcurve.fold(period=num_folds * self.lightcurve_data.period_at_max_power)
 
         # Calculate bin value
         bin_value = self.find_bin_value(folded_lightcurve, num_folds * 50)
 
         # Bin the folded lightcurve
-        binned_lightcurve = folded_lightcurve.bin(bin_value*u.min) 
+        binned_lightcurve = folded_lightcurve.bin(bin_value * u.min)
 
         return binned_lightcurve
-    
 
-    def fold_sine_wave(self, x, frequency, sine_wave, num_folds = 1):
+
+    def fold_sine_wave(self, x, frequency, sine_wave, num_folds=1):
         """
-            Folds the fitted sine wave on it's period and bins it into 50 bins
+            Folds the fitted sine wave on its period and bins it into 50 bins
             Name:       find_bin_value()
             Parameters:
                         x: time data of the lightcurve
@@ -160,10 +160,10 @@ class OrbCalculator(object):
         sine_period = 1 / frequency
 
         # Make the sine wave into a lightcurve 
-        sine_lightcurve = LightCurve(time = x, flux = sine_wave)
+        sine_lightcurve = LightCurve(time=x, flux=sine_wave)
 
         # Fold sine wave
-        folded_sine = sine_lightcurve.fold(period = num_folds * self.lightcurve_data.period_at_max_power)
+        folded_sine = sine_lightcurve.fold(period=num_folds * self.lightcurve_data.period_at_max_power)
 
         # Calculate bin value
         bin_value = self.find_bin_value(folded_sine, num_folds * 50)
@@ -171,11 +171,11 @@ class OrbCalculator(object):
         binned_sine = folded_sine.bin(bin_value * u.min)
 
         return binned_sine, sine_period
-    
+
 
     def plot_periodogram(self, axis):
         """
-            Plots the lightcurve's periodogram on a given axis, as well as the period at max power, and the literatue
+            Plots the lightcurve's periodogram on a given axis, as well as the period at max power, and the literature
             period, if any
             Name:       plot_periodogram()
             Parameters:
@@ -187,23 +187,23 @@ class OrbCalculator(object):
         axis.set_title('Periodogram', fontsize=12)
         axis.set_xlabel(r'$P_{\text{orb}}$ (days)', fontsize=10)
         axis.set_ylabel('Power', fontsize=10)
-        axis.plot(self.lightcurve_data.periodogram.period, self.lightcurve_data.periodogram.power, color = '#9AADD0')
-        axis.axvline(x = self.lightcurve_data.period_at_max_power, color = "#101935", ls = (0, (4,5)), lw = 2, 
-                          label = fr'$P_{{\text{{orb, max power}}}}={np.round(self.lightcurve_data.period_at_max_power, 3)}$ days') 
+        axis.plot(self.lightcurve_data.periodogram.period, self.lightcurve_data.periodogram.power, color='#9AADD0')
+        axis.axvline(x=self.lightcurve_data.period_at_max_power, color="#101935", ls=(0, (4, 5)), lw=2, 
+                     label=fr'$P_{{\text{{orb, max power}}}}={np.round(self.lightcurve_data.period_at_max_power, 3)}$ days') 
         
         # Plot literature period if there is one
-        if self.lightcurve_data.lit_period != 0.0: 
-            axis.axvline(x = self.lightcurve_data.lit_period, color = '#A30015', 
-                              label = fr'Literature $P_{{\text{{orb}}}}={np.round(self.lightcurve_data.lit_period, 3)}$ days')
+        if self.lightcurve_data.lit_period != 0.0:
+            axis.axvline(x=self.lightcurve_data.lit_period, color='#A30015', 
+                         label=fr'Literature $P_{{\text{{orb}}}}={np.round(self.lightcurve_data.lit_period, 3)}$ days')
 
         # Plot 5 sigma cutoff
-        axis.axhline(y = self.cutoff, color = '#4A5D96', ls = (0, (4,5)), lw = 2, label = '5-sigma cutoff')
+        axis.axhline(y=self.cutoff, color='#4A5D96', ls=(0, (4, 5)), lw=2, label='5-sigma cutoff')
 
         # Change scale to be log
-        axis.set_xscale('log') 
+        axis.set_xscale('log')
 
         # Add legend
-        axis.legend(loc = 'upper left')
+        axis.legend(loc='upper left')
 
 
     def plot_binned_lightcurve(self, axis):
@@ -218,16 +218,16 @@ class OrbCalculator(object):
         """
         # Plot title
         axis.set_title(r'Lightcurve Folded on $P_{\text{orb, max power}}$', fontsize=12)
-        axis.set_xlabel('Phase', fontsize = 10)
-        axis.set_ylabel('Normalized Flux', fontsize = 10)
+        axis.set_xlabel('Phase', fontsize=10)
+        axis.set_ylabel('Normalized Flux', fontsize=10)
 
         # Plot the binned lightcurve
         axis.vlines(self.binned_lightcurve.phase.value, 
-                        self.binned_lightcurve.flux - self.binned_lightcurve.flux_err, 
-                        self.binned_lightcurve.flux + self.binned_lightcurve.flux_err, color = '#9AADD0', lw = 2)
+                    self.binned_lightcurve.flux - self.binned_lightcurve.flux_err, 
+                    self.binned_lightcurve.flux + self.binned_lightcurve.flux_err, color='#9AADD0', lw=2)
         
         # Plot the binned sine fit 
-        axis.plot(self.binned_sine.phase.value, self.binned_sine.flux.value, color = '#101935', label = 'Folded Sine Wave')
+        axis.plot(self.binned_sine.phase.value, self.binned_sine.flux.value, color='#101935', label='Folded Sine Wave')
 
         # Add legend 
         axis.legend()
@@ -244,27 +244,27 @@ class OrbCalculator(object):
         """
         # Plot title 
         axis.set_title('Lightcurve', fontsize=12)
-        axis.set_xlabel('Time (days)', fontsize = 10)
-        axis.set_ylabel('Normalized Flux', fontsize = 10)
+        axis.set_xlabel('Time (days)', fontsize=10)
+        axis.set_ylabel('Normalized Flux', fontsize=10)
 
         # Plot lightcurve
         axis.vlines(self.lightcurve_data.lightcurve.time.value, 
-                        self.lightcurve_data.lightcurve.flux - self.lightcurve_data.lightcurve.flux_err, 
-                        self.lightcurve_data.lightcurve.flux + self.lightcurve_data.lightcurve.flux_err, color = '#9AADD0')
+                    self.lightcurve_data.lightcurve.flux - self.lightcurve_data.lightcurve.flux_err, 
+                    self.lightcurve_data.lightcurve.flux + self.lightcurve_data.lightcurve.flux_err, color='#9AADD0')
         
         # Add vertical lines at each period interval of the sine wave
         for tp in self.time_points:
-            axis.axvline(x = tp, color = '#4A5D96', ls = (0, (4,5)), lw = 2, 
-                         label = fr'$P_{{\text{{orb, sine}}}}={np.round(self.sine_period, 3)}$ days' if tp == self.time_points[0] else "")
+            axis.axvline(x=tp, color='#4A5D96', ls=(0, (4, 5)), lw=2, 
+                         label=fr'$P_{{\text{{orb, sine}}}}={np.round(self.sine_period, 3)}$ days' if tp == self.time_points[0] else "")
         
         # Plot sine wave
-        axis.plot(self.time, self.sine_fit.best_fit, color= '#101935', label = 'Fitted Sine Wave')
+        axis.plot(self.time, self.sine_fit.best_fit, color='#101935', label='Fitted Sine Wave')
 
         # Set xlim and plot legend 
         axis.set_xlim(self.xmin, self.xmax)
         axis.legend()
 
-    
+
     def plot_residuals(self, axis):
         """
             Plots the residuals of the lightcurve, which is the flux subtracted by the sine fit
@@ -279,11 +279,11 @@ class OrbCalculator(object):
 
         # Plot title
         axis.set_title('Flux - Fitted Sine Wave', fontsize=12)
-        axis.set_xlabel('Time (days)', fontsize = 10)
-        axis.set_ylabel('Normalized Flux', fontsize = 10)
+        axis.set_xlabel('Time (days)', fontsize=10)
+        axis.set_ylabel('Normalized Flux', fontsize=10)
 
         # Plot the residuals
-        axis.plot(self.time, residuals, color = '#9AADD0') 
+        axis.plot(self.time, residuals, color='#9AADD0')
 
         # Set xlim (no legend needed)
         axis.set_xlim(self.xmin, self.xmax)
@@ -301,29 +301,29 @@ class OrbCalculator(object):
         """
         # Plot basics
         sns.set_style("darkgrid")
-        sns.set_theme(rc={'axes.facecolor':'#F8F5F2'})
+        sns.set_theme(rc={'axes.facecolor': '#F8F5F2'})
         fig, axs = plt.subplots(2, 2, figsize=(14, 8))
         plt.subplots_adjust(hspace=0.35)
-        plt.suptitle(fr"Press 'y' if the period is real, 'n' if not.", fontweight = 'bold')
+        plt.suptitle(fr"Press 'y' if the period is real, 'n' if not.", fontweight='bold')
         if self.is_plausible:
-            fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max power}}$ is over 5 sigma, so MIGHT be real', ha='center', fontsize=12, style = 'italic')
+            fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max power}}$ is over 5 sigma, so MIGHT be real', ha='center', fontsize=12, style='italic')
         else:
-            fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max power}}$ is under 5 sigma, so might NOT be real', ha='center', fontsize=12, style = 'italic')
-        fig.text(0.5, 0.05, f'{self.lightcurve_data.name}', ha='center', fontsize=16, fontweight = 'bold')
-        fig.text(0.5, 0.02, fr'$i_{{\text{{mag}}}}={self.lightcurve_data.imag}$', ha='center', fontsize=12, fontweight = 'bold')
+            fig.text(0.5, 0.928, r'Note: $P_{\text{orb, max power}}$ is under 5 sigma, so might NOT be real', ha='center', fontsize=12, style='italic')
+        fig.text(0.5, 0.05, f'{self.lightcurve_data.name}', ha='center', fontsize=16, fontweight='bold')
+        fig.text(0.5, 0.02, fr'$i_{{\text{{mag}}}}={self.lightcurve_data.imag}$', ha='center', fontsize=12, fontweight='bold')
         cid = fig.canvas.mpl_connect('key_press_event', lambda event: self.on_key(event))
 
         # Plot the periodogram
-        self.plot_periodogram(axs[0, 0]) # see if can do this
+        self.plot_periodogram(axs[0, 0])  # see if can do this
 
         # Plot the binned lightcurve
         self.plot_binned_lightcurve(axs[1, 0])
 
         # Plot the lightcurve with the sine fit
-        self.plot_lightcurve_and_sine(axs[0,1])
+        self.plot_lightcurve_and_sine(axs[0, 1])
         
         # Plot residuals
-        self.plot_residuals(axs[1,1])
+        self.plot_residuals(axs[1, 1])
 
 
     def on_key(self, event):
@@ -346,4 +346,3 @@ class OrbCalculator(object):
                 self.is_real_period = True
 
             plt.close()
-        
