@@ -14,7 +14,7 @@ preload/eclipsing_plots/.DS_Store
 preload/flare_plots/.DS_Store
 preload/period_plots/.DS_Store
 
-preload/doppler_plots
-preload/eclipsing_plots
-preload/flare_plots
-preload/period_plots
+# preload/doppler_plots
+# preload/eclipsing_plots
+# preload/flare_plots
+# preload/period_plots
