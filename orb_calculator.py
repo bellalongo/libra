@@ -20,6 +20,7 @@ class OrbCalculator(object):
         # Lightcurve data
         self.time = self.lightcurve_data.lightcurve.time.value
         self.flux = self.lightcurve_data.lightcurve.flux.value
+        self.flux_err = self.lightcurve_data.lightcurve.flux_err.value
 
         # Fit a sine wave to the lightcurve
         self.sine_fit = self.fit_sine_wave(self.time, self.flux)

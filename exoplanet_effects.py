@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import seaborn as sns
+import sys
+
+sys.path.insert(0, '../')
+import stella
 
 
 class ExoplanetEffects(object):
@@ -119,20 +123,44 @@ class ExoplanetEffects(object):
             Returns:
                         None
         """
+        # # Plot title and axis 
+        # plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight='bold')
+
+        # # Plots for Flares
+        # gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        # ax1 = fig.add_subplot(gs[0, 0])
+        # ax2 = fig.add_subplot(gs[1, 0])
+        # plt.subplots_adjust(hspace=0.5)
+
+        # # Plot the lightcurve with the fit
+        # self.orb_calculator.plot_lightcurve_and_sine(ax1)
+
+        # # Plot the residuals
+        # self.orb_calculator.plot_residuals(ax2)
+
+        # STELLA ADDITION
+        OUT_DIR = 'stella_results'
+        cnn = stella.ConvNN(output_dir = OUT_DIR) # maybe make all of this its own function?
+
+        # Calculate residuals
+        residuals = self.orb_calculator.flux - self.orb_calculator.sine_fit.best_fit
+
+        # Prediction
+        cnn.predict(modelname='stella_results/ensemble_s0002_i0325_b0.73.h5', # change to results name
+            times = self.orb_calculator.time, 
+            fluxes = self.orb_calculator.flux + 1, 
+            errs = self.orb_calculator.flux_err)
+        
         # Plot title and axis 
         plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight='bold')
+        plt.title('Lightcurve', fontsize=12)
+        plt.xlabel('Time (days)', fontsize=10)
+        plt.ylabel('Normalized Flux', fontsize=10)
 
-        # Plots for Flares
-        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
-        ax1 = fig.add_subplot(gs[0, 0])
-        ax2 = fig.add_subplot(gs[1, 0])
-        plt.subplots_adjust(hspace=0.5)
-
-        # Plot the lightcurve with the fit
-        self.orb_calculator.plot_lightcurve_and_sine(ax1)
-
-        # Plot the residuals
-        self.orb_calculator.plot_residuals(ax2)
+        # Plot flares
+        plt.scatter(cnn.predict_time[0], cnn.predict_flux[0],
+                    c=cnn.predictions[0], vmin=0, vmax=1, s=10)
+        plt.colorbar(label='Probability of Flare')
 
 
     def effects_plots(self, effect):
