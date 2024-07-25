@@ -301,8 +301,8 @@ class OrbCalculator(object):
                         None       
         """
         # Plot basics
-        sns.set_style("darkgrid")
-        sns.set_theme(rc={'axes.facecolor': '#F8F5F2'})
+        sns.set_style("whitegrid")
+        # sns.set_theme(rc={'axes.facecolor': '#F8F5F2'})
         fig, axs = plt.subplots(2, 2, figsize=(14, 8))
         plt.subplots_adjust(hspace=0.35)
         plt.suptitle(fr"Press 'y' if the period is real, 'n' if not.", fontweight='bold')
