@@ -1,6 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from matplotlib.colors import ListedColormap
 import numpy as np
 import seaborn as sns
 import sys
@@ -137,11 +138,17 @@ class ExoplanetEffects(object):
             times = self.orb_calculator.time, 
             fluxes = residuals + 1, 
             errs = self.orb_calculator.flux_err)       
-        
+            
+        # Use the Seaborn "flare" colormap
+        flare_cmap = sns.color_palette("flare", as_cmap=True)
+
         # Plot prediction
         plt.scatter(cnn.predict_time[0], cnn.predict_flux[0],
-                    c = cnn.predictions[0], vmin=0, vmax=1, s=10, cmap='Blues')
-        plt.colorbar(label='Probability of Flare')               
+                    c=cnn.predictions[0], vmin=0, vmax=1, s=10, cmap=flare_cmap)
+        plt.colorbar(label='Probability of Flare')
+
+        # Show the plot
+        plt.show()
 
 
     def flares_plot(self, fig):
@@ -177,7 +184,7 @@ class ExoplanetEffects(object):
                         None
         """
         # Plot basics
-        sns.set_style("darkgrid")
+        # sns.set_style("darkgrid")
         # sns.set_theme(rc={'axes.facecolor':'#F8F5F2'})
         fig = plt.figure(figsize=(14, 8))
         cid = fig.canvas.mpl_connect('key_press_event', lambda event: self.on_key(event))
