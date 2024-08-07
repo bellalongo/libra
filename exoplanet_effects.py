@@ -122,9 +122,13 @@ class ExoplanetEffects(object):
         """
         # Plot title and axis 
         plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight='bold')
-        plt.title('Flux - Fitted Sine Wave', fontsize=12)
-        plt.xlabel('Time (days)', fontsize=10)
-        plt.ylabel('Normalized Flux', fontsize=10)
+        fig = plt.figure(figsize=(14, 8))
+
+        # Plots for Flares
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+        ax1 = fig.add_subplot(gs[0, 0])
+        ax2 = fig.add_subplot(gs[1, 0])
+        plt.subplots_adjust(hspace=0.5)
 
         # Stella
         OUT_DIR = 'stella_results'
@@ -133,19 +137,43 @@ class ExoplanetEffects(object):
         # Calculate residuals
         residuals = self.lightcurve_data.flux - self.orb_calculator.sine_fit.best_fit
 
-        # Find flares on the flux data
+        # Find flares on the residuals
         cnn.predict(modelname='stella_results/ensemble_s0002_i0325_b0.73.h5', # change to results name
             times = self.lightcurve_data.time, 
             fluxes = residuals + 1, 
-            errs = self.lightcurve_data.flux_err)       
-            
+            errs = self.lightcurve_data.flux_err)     
+        
         # Use the Seaborn "flare" colormap
         flare_cmap = sns.color_palette("flare", as_cmap=True)
 
-        # Plot prediction
-        plt.scatter(cnn.predict_time[0], cnn.predict_flux[0],
+        # Plot residuals
+        ax1.scatter(cnn.predict_time[0], cnn.predict_flux[0],
                     c=cnn.predictions[0], vmin=0, vmax=1, s=10, cmap=flare_cmap)
-        plt.colorbar(label='Probability of Flare')
+        
+        # Residual plot info
+        ax1.set_title('Flux - Fitted Sine Wave', fontsize=12)
+        ax1.set_xlabel('Time (days)', fontsize=10)
+        ax1.set_ylabel('Normalized Flux', fontsize=10)
+
+        # Find flares of the flux data
+        cnn.predict(modelname='stella_results/ensemble_s0002_i0325_b0.73.h5', # change to results name
+            times = self.lightcurve_data.time, 
+            fluxes = self.lightcurve_data.flux + 1, 
+            errs = self.lightcurve_data.flux_err)    
+
+        # Plot flux
+        ax2.scatter(cnn.predict_time[0], cnn.predict_flux[0],
+                    c=cnn.predictions[0], vmin=0, vmax=1, s=10, cmap=flare_cmap)
+        
+        # Residual plot info
+        ax2.set_title('Lightcurve', fontsize=12)
+        ax2.set_xlabel('Time (days)', fontsize=10)
+        ax2.set_ylabel('Normalized Flux', fontsize=10)
+        
+        # plt.colorbar(label='Probability of Flare')
+        # Add a single colorbar for both subplots
+        cbar = fig.colorbar(ax1.collections[0], ax=[ax1, ax2], orientation='vertical', pad=0.02)
+        cbar.set_label('Probability of Flare')
 
         # Show the plot
         plt.show()

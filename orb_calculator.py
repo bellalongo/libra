@@ -1,8 +1,11 @@
 import astropy.units as u
+from astropy.modeling.models import Gaussian1D
+from astropy.modeling import fitting
 from lightkurve import LightCurve
 import lmfit 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import zscore
 import seaborn as sns
 
 
@@ -17,8 +20,11 @@ class OrbCalculator(object):
         # Determine if the period is plausible
         self.is_plausible, self.cutoff = self.plausible_period()
 
+        # Remove eclipses
+        self.no_eclipse_flux = self.remove_eclipses()
+
         # Fit a sine wave to the lightcurve
-        self.sine_fit = self.fit_sine_wave(self.lightcurve_data.time, self.lightcurve_data.flux)
+        self.sine_fit = self.fit_sine_wave(self.lightcurve_data.time, self.no_eclipse_flux)
 
         # Fold and bin lightcurve
         self.binned_lightcurve = self.fold_lightcurve()
@@ -66,6 +72,105 @@ class OrbCalculator(object):
             return True, 5 * std_dev
         else:
             return False, 5 * std_dev
+        
+
+    def create_gaussian_model(self, time_start, time_end, num_gaussians=75):
+        """
+
+        """
+        time_steps = (time_end - time_start) / num_gaussians
+        model_profiles = []
+
+        try:
+            for i in range(num_gaussians):
+                mask = (self.lightcurve_data.time > min(self.lightcurve_data.time) + i * time_steps) & (
+                    self.lightcurve_data.time  < min(self.lightcurve_data.time) + (i+1) * time_steps)
+
+                init_amp = np.max(self.lightcurve_data.flux[mask])
+                init_mean = np.mean(self.lightcurve_data.time[mask])
+                init_stddev = np.std(self.lightcurve_data.time[mask]) 
+
+                # Gaussian profile
+                gaussian_profile = Gaussian1D(amplitude = init_amp, mean = init_mean, stddev = init_stddev)
+                model_profiles.append(gaussian_profile)
+        
+        except ValueError:
+            return
+
+        # Create compound model
+        compound_model = model_profiles[0]
+        for profile in model_profiles[1:]:
+            compound_model += profile
+
+        # Create a fitter object
+        fitter = fitting.LevMarLSQFitter()
+
+        # Fit the model to the data
+        fitted_model = fitter(compound_model, self.lightcurve_data.time, self.lightcurve_data.flux)
+        
+        return fitted_model
+    
+
+    def find_sig_eclipses(self, fitted_model, z_threshold = 2):
+        """
+        
+        """
+        # Extract amplitudes from fitted Gaussians
+        amplitudes = np.array([profile.amplitude.value for profile in fitted_model])
+
+        # Calculate Z-scores
+        z_scores = zscore(amplitudes)
+
+        # Identify significant eclipses
+        significant_eclipses = [(i, amplitudes[i], fitted_model[i].mean.value, fitted_model[i].stddev.value)
+                                for i in range(len(z_scores)) if np.abs(z_scores[i]) > z_threshold]
+        
+        return significant_eclipses
+    
+
+    def remove_eclipses(self):
+        """
+
+        """
+        # Time start and end for finding eclipses
+        time_start = min(self.lightcurve_data.time) 
+        time_end = min(self.lightcurve_data.time) + 1 * self.lightcurve_data.period_at_max_power
+
+        # Create the gaussian model
+        fitted_model = self.create_gaussian_model(time_start, time_end)
+
+        # Check if the fitted model is None
+        if fitted_model is None:
+            return self.lightcurve_data.flux
+
+        # Find significant eclipses
+        significant_eclipses = self.find_sig_eclipses(fitted_model)
+
+        # Isolate eclise means and standard deviatoins
+        eclipse_means = [mean for _, _, mean, _ in significant_eclipses]
+        eclipse_stddevs = [stddev for _, _, _, stddev in significant_eclipses] 
+
+        # Find average mean and standard deviation
+        eclipse_stddev = np.mean(eclipse_stddevs)
+
+        # Replace eclipses with the average flux
+        avg_flux = np.mean(self.lightcurve_data.flux)
+
+        # Replace every eclipse in the lightcurve with the average
+        no_eclipse_flux = np.copy(self.lightcurve_data.flux)
+
+        while eclipse_means[len(eclipse_means) - 1] < max(self.lightcurve_data.time):
+            # Iterate through each eclipse
+            for eclipse in eclipse_means:
+                # Isolate the eclipse
+                eclipse_mask = (self.lightcurve_data.time > eclipse - 2 * eclipse_stddev) & (
+                    self.lightcurve_data.time < eclipse + 2 * eclipse_stddev)
+
+                no_eclipse_flux[eclipse_mask] = avg_flux
+
+            eclipse_means = [mean + self.lightcurve_data.period_at_max_power for mean in eclipse_means]
+
+        return no_eclipse_flux
 
 
     def sine_wave(self, x, amplitude, frequency, phase):
