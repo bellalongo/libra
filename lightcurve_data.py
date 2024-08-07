@@ -10,6 +10,11 @@ class LightcurveData(object):
         # Get lightcurve data
         self.lightcurve, self.name, self.imag, self.lit_period = self.get_lightcurve()
 
+        # Lightcurve data
+        self.time = self.lightcurve.time.value
+        self.flux = self.lightcurve.flux.value
+        self.flux_err = self.lightcurve.flux_err.value
+
         # Get periodogram
         self.periodogram = self.get_periodogram()
 

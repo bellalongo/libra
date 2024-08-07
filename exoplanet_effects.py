@@ -101,7 +101,7 @@ class ExoplanetEffects(object):
         binned_lightcurve = self.orb_calculator.fold_lightcurve(num_folds=2)
 
         # Bin the sine wave, but with 2 folds
-        binned_sine, _ = self.orb_calculator.fold_sine_wave(self.orb_calculator.time, self.orb_calculator.sine_fit.params['frequency'].value, 
+        binned_sine, _ = self.orb_calculator.fold_sine_wave(self.lightcurve_data.time, self.orb_calculator.sine_fit.params['frequency'].value, 
                                            self.orb_calculator.sine_fit.best_fit, num_folds=2)
         
         # Plot the binned lightcurve
@@ -131,13 +131,13 @@ class ExoplanetEffects(object):
         cnn = stella.ConvNN(output_dir = OUT_DIR) 
 
         # Calculate residuals
-        residuals = self.orb_calculator.flux - self.orb_calculator.sine_fit.best_fit
+        residuals = self.lightcurve_data.flux - self.orb_calculator.sine_fit.best_fit
 
         # Find flares on the flux data
         cnn.predict(modelname='stella_results/ensemble_s0002_i0325_b0.73.h5', # change to results name
-            times = self.orb_calculator.time, 
+            times = self.lightcurve_data.time, 
             fluxes = residuals + 1, 
-            errs = self.orb_calculator.flux_err)       
+            errs = self.lightcurve_data.flux_err)       
             
         # Use the Seaborn "flare" colormap
         flare_cmap = sns.color_palette("flare", as_cmap=True)
