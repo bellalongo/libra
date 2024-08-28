@@ -122,7 +122,6 @@ class ExoplanetEffects(object):
         """
         # Plot title and axis 
         plt.suptitle("Press 'y' if there are flares, 'n' if not", fontweight='bold')
-        fig = plt.figure(figsize=(14, 8))
 
         # Plots for Flares
         gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
@@ -159,7 +158,7 @@ class ExoplanetEffects(object):
         cnn.predict(modelname='stella_results/ensemble_s0002_i0325_b0.73.h5', # change to results name
             times = self.lightcurve_data.time, 
             fluxes = self.lightcurve_data.flux + 1, 
-            errs = self.lightcurve_data.flux_err)    
+            errs = self.lightcurve_data.flux_err) 
 
         # Plot flux
         ax2.scatter(cnn.predict_time[0], cnn.predict_flux[0],
@@ -175,8 +174,8 @@ class ExoplanetEffects(object):
         cbar = fig.colorbar(ax1.collections[0], ax=[ax1, ax2], orientation='vertical', pad=0.02)
         cbar.set_label('Probability of Flare')
 
-        # Show the plot
-        plt.show()
+        # # Show the plot
+        # plt.show()
 
 
     def flares_plot(self, fig):
