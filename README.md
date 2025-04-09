@@ -1,4 +1,4 @@
-# LIBRA: LIghtcurve Investigation for Binary oRbital period Analysis
+# LIBRA: Lightcurve Investigation for Binary oRbital period Analysis
 
 ## Overview
 
